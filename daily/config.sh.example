@@ -1,0 +1,42 @@
+# Configuration for the daily video job. Copy to config.sh and edit.
+#   cp daily/config.sh.example daily/config.sh
+# You should never need to edit run-daily.sh itself.
+
+# ---------------------------------------------------------------- cadence
+# Videos per nightly run, built SEQUENTIALLY (each takes roughly 45-90 min and
+# ~1.7GB of working space, purged after). Clamped to 6: YouTube's default API
+# quota is 10,000 units/day and an upload costs ~1,600.
+VIDEOS_PER_RUN=1
+
+# ---------------------------------------------------------------- narrator
+# Kokoro voice. am_* American male, af_* American female, bm_*/bf_* British.
+# Run `tools/audition-voices.py` to hear them all before choosing.
+VOICE=af_heart
+SPEED=1.0
+
+# MEASURED words-per-minute for VOICE at SPEED, including the paragraph pauses
+# tts.py inserts. The script is written to a word budget up front, so this is
+# what decides whether a video lands on its runtime target.
+#
+# ⚠️ CHANGE THIS WHENEVER YOU CHANGE VOICE OR SPEED. Measured on identical text:
+#     af_heart 1.0 -> 148 wpm     am_liam 1.0 -> 167 wpm  (12.8% faster)
+# Getting it wrong fails silently — the video just misses its target length.
+WPM=148
+
+# ---------------------------------------------------------------- reliability
+# Turn cap for each headless `claude -p` invocation. DO NOT REMOVE: the default
+# cap is far too low for this pipeline, and hitting it prints an error and STILL
+# EXITS 0, so it looks like success. See docs/TROUBLESHOOTING.md.
+MAX_TURNS=800
+
+# Retries per video. Attempt 1 builds fresh; later attempts resume the workspace
+# already on disk rather than starting a new topic.
+MAX_ATTEMPTS=3
+
+# ---------------------------------------------------------------- performance
+# Parallel TTS workers. Chapters are independent. TTS_THREADS caps each worker's
+# internal thread count — without it torch grabs every core per process and the
+# workers thrash instead of scaling. 6 x 2 suits a 12-logical-core machine.
+TTS_JOBS=6
+TTS_THREADS=2
+MP3_JOBS=6

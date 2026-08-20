@@ -1,0 +1,25 @@
+# Never commit credentials or generated state
+token.json
+*.client
+client_secret*.json
+daily/config.sh
+daily/run.lock
+daily/status.json
+daily/logs/
+voice-audition/
+
+# Python
+__pycache__/
+*.pyc
+.venv*/
+
+# macOS
+.DS_Store
+
+# Generated workspaces
+*/wav/
+*/mp3/
+*/slates/
+*/videos/
+*/backgrounds/
+music.wav

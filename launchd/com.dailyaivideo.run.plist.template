@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.dailyaivideo.run</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__ROOT__/daily/run-daily.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>__HOUR__</integer>
+    <key>Minute</key><integer>__MINUTE__</integer>
+  </dict>
+  <key>EnvironmentVariables</key>
+  <dict><key>DAILY_VIDEO_ROOT</key><string>__ROOT__</string></dict>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>__ROOT__/daily/logs/launchd.out</string>
+  <key>StandardErrorPath</key><string>__ROOT__/daily/logs/launchd.err</string>
+  <key>ProcessType</key><string>Background</string>
+  <key>LowPriorityIO</key><false/>
+</dict></plist>
