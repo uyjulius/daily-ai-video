@@ -70,7 +70,8 @@ fi
 # ------------------------------------------------------------------ layout
 echo; echo "Installing into $ROOT ..."
 mkdir -p "$ROOT/daily/logs" "$ROOT/beats"
-cp "$SRC/daily/run-daily.sh" "$SRC/daily/check-attention.sh" "$SRC/daily/new-video.sh" "$SRC/daily/menubar.py" "$ROOT/daily/"
+cp "$SRC/daily/run-daily.sh" "$SRC/daily/check-attention.sh" "$SRC/daily/new-video.sh" \
+   "$SRC/daily/menubar.py" "$SRC/daily/dashboard.py" "$SRC/daily/dashboard.html" "$ROOT/daily/"
 chmod +x "$ROOT/daily/"*.sh
 ok "scripts"
 
@@ -138,7 +139,14 @@ done
 # ------------------------------------------------------------------ next steps
 cat <<NEXT
 
-Installed. Two things still need you:
+Installed.
+
+  ▸ Everything below can also be done from the dashboard, which is the easier route:
+        click the menu bar icon → "Open dashboard…"
+    or from here:
+        python3 $ROOT/daily/dashboard.py --open
+
+Two things still need you:
 
   1. YouTube credentials (once):
        Create an OAuth *Desktop* client in Google Cloud Console, enable the
@@ -147,6 +155,8 @@ Installed. Two things still need you:
 
   2. Let the Mac wake for the job (needs your password, once):
        sudo pmset repeat wakeorpoweron MTWRFSU $(printf '%02d:%02d:00' "$HOUR" "$MINUTE")
+
+The dashboard walks you through both, and shows a tick against each once it is done.
 
 Then EDIT YOUR BEATS — $ROOT/beats/*.md ship as placeholders and will produce
 generic videos until you make them yours. See docs/BEATS.md.

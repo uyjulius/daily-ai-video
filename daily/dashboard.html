@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,800&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14161C; --ink-2:#1A1D25; --ink-3:#222630; --rule:#2E333F;
+  --paper:#ECE7DD; --paper-dim:#9AA0AC;
+  --gold:#D4A24E; --rust:#B4503C; --sage:#4E8C5E; --indigo:#5A5F9E;
+  --display:'Bodoni Moda',Georgia,serif;
+  --body:'Newsreader',Georgia,serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ink); color:var(--paper);
+  font-family:var(--body); font-size:17px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(120% 60% at 50% -10%, rgba(212,162,78,.09), transparent 60%);
+  background-attachment:fixed;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px 96px}
+a{color:var(--gold)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+/* ---- metadata rail: the slates' own footer treatment ---- */
+.rail{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper-dim)}
+.rail b{color:var(--paper);font-weight:500}
+
+/* ---- masthead ---- */
+header{padding:44px 0 28px;border-bottom:1px solid var(--rule);margin-bottom:38px}
+.mast{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,5.2vw,52px);margin:0;letter-spacing:-.015em}
+h1 em{font-style:italic;color:var(--gold)}
+.sw{display:flex;align-items:center;gap:11px}
+.toggle{width:50px;height:28px;border-radius:999px;border:1px solid var(--rule);background:var(--ink-3);position:relative;transition:background .18s,border-color .18s;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--paper-dim);transition:transform .18s,background .18s}
+.toggle[aria-pressed="true"]{background:rgba(78,140,94,.28);border-color:var(--sage)}
+.toggle[aria-pressed="true"]::after{transform:translateX(22px);background:var(--sage)}
+
+/* ---- status ---- */
+.status{border:1px solid var(--rule);background:var(--ink-2);padding:26px 28px;margin-bottom:14px;position:relative;overflow:hidden}
+.status::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rule)}
+.status.is-run::before{background:var(--sage)}
+.status.is-bad::before{background:var(--rust)}
+.status h2{font-family:var(--display);font-weight:400;font-size:29px;margin:.35em 0 .18em}
+.status p{margin:0;color:var(--paper-dim);max-width:62ch}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sage);margin-right:8px;vertical-align:middle}
+.is-run .dot{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.stages{display:flex;gap:0;margin-top:20px;border-top:1px solid var(--rule);padding-top:16px}
+.stg{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#5A6070;padding-right:10px;position:relative}
+.stg::before{content:"";display:block;height:2px;background:var(--rule);margin-bottom:9px}
+.stg.done{color:var(--paper-dim)}.stg.done::before{background:var(--sage)}
+.stg.now{color:var(--gold)}.stg.now::before{background:var(--gold)}
+
+/* ---- sections ---- */
+section{margin-top:54px}
+.shead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;border-bottom:1px solid var(--rule);padding-bottom:11px;margin-bottom:22px}
+.shead h3{font-family:var(--display);font-weight:400;font-size:25px;margin:0}
+.hint{color:var(--paper-dim);font-size:15px;margin:-8px 0 20px;max-width:66ch}
+
+/* ---- ledger rows: the signature ---- */
+.row{display:grid;grid-template-columns:96px 1fr auto;gap:26px;align-items:center;padding:22px 0;border-bottom:1px solid var(--rule)}
+.num{font-family:var(--display);font-weight:800;font-size:62px;line-height:.85;letter-spacing:-.03em;
+  background:repeating-linear-gradient(0deg,currentColor 0 2px,transparent 2px 4px);
+  -webkit-background-clip:text;background-clip:text;color:var(--gold);-webkit-text-fill-color:transparent;
+  text-align:right}
+.row:nth-child(5n+2) .num{color:var(--rust)}
+.row:nth-child(5n+3) .num{color:var(--sage)}
+.row:nth-child(5n+4) .num{color:var(--indigo)}
+.row h4{font-family:var(--display);font-weight:400;font-size:21px;margin:0 0 6px;line-height:1.28}
+.row h4 a{text-decoration:none;color:var(--paper)}
+.row h4 a:hover{color:var(--gold)}
+.tally{display:flex;height:5px;width:100%;max-width:190px;margin-top:11px;background:var(--ink-3)}
+.tally i{display:block;height:100%}
+.t-ok{background:var(--sage)}.t-cor{background:var(--gold)}.t-cut{background:var(--rust)}
+.rowright{text-align:right;white-space:nowrap}
+.link{background:none;border:1px solid var(--rule);color:var(--paper-dim);font-family:var(--mono);
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;padding:7px 12px;transition:.15s}
+.link:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ---- cards / forms ---- */
+.card{border:1px solid var(--rule);background:var(--ink-2);padding:22px 24px;margin-bottom:14px}
+.card h4{font-family:var(--display);font-weight:400;font-size:20px;margin:0 0 4px}
+label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--paper-dim);margin:0 0 8px}
+input[type=text],textarea,select{width:100%;background:var(--ink);border:1px solid var(--rule);color:var(--paper);
+  font-family:var(--body);font-size:16px;padding:11px 13px;border-radius:0}
+textarea{font-family:var(--mono);font-size:13px;line-height:1.7;min-height:300px;resize:vertical}
+select,input[type=number]{font-family:var(--mono);font-size:14px}
+.btn{background:var(--gold);color:#191410;border:none;font-family:var(--mono);font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;padding:12px 20px;font-weight:600;transition:.15s}
+.btn:hover{background:#E5B463}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:none;border:1px solid var(--rule);color:var(--paper-dim)}
+.btn.ghost:hover{border-color:var(--gold);color:var(--gold);background:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.setting{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:17px 0;border-bottom:1px solid var(--rule)}
+.setting:last-child{border-bottom:none}
+.setting .lab{max-width:46ch}
+.setting .lab b{display:block;font-family:var(--display);font-size:18px;font-weight:400;margin-bottom:2px}
+.setting .lab span{color:var(--paper-dim);font-size:14.5px}
+.setting .ctl{flex:none;min-width:190px;text-align:right}
+.warn{border-left:3px solid var(--rust);background:rgba(180,80,60,.09);padding:14px 18px;margin:12px 0;font-size:15px}
+.okline{border-left:3px solid var(--sage);background:rgba(78,140,94,.09);padding:14px 18px;margin:12px 0;font-size:15px}
+.chk{display:flex;gap:13px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--rule)}
+.chk:last-child{border-bottom:none}
+.chk .m{font-family:var(--mono);font-size:14px;flex:none;width:18px}
+.chk.ok .m{color:var(--sage)}.chk.no .m{color:var(--rust)}
+.chk .t b{display:block;font-weight:600}
+.chk .t code{font-family:var(--mono);font-size:12.5px;background:var(--ink-3);padding:2px 7px;display:inline-block;margin-top:5px}
+.empty{color:var(--paper-dim);font-style:italic;padding:22px 0}
+.pill{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--rule);padding:9px 8px 9px 15px;margin:0 9px 9px 0;font-size:15px}
+.pill button{background:none;border:none;color:var(--paper-dim);font-size:17px;line-height:1;padding:2px 6px}
+.pill button:hover{color:var(--rust)}
+dialog{border:1px solid var(--rule);background:var(--ink-2);color:var(--paper);max-width:820px;width:92vw;padding:0}
+dialog::backdrop{background:rgba(8,9,12,.82)}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--rule)}
+.dlg-b{padding:22px 24px;max-height:68vh;overflow:auto}
+.dlg-b pre{font-family:var(--mono);font-size:12.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word;margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:30px;background:var(--paper);color:var(--ink);
+  font-family:var(--mono);font-size:12px;letter-spacing:.09em;text-transform:uppercase;padding:13px 22px;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}
+@media (max-width:520px){.wrap{padding:0 18px 72px}.status{padding:20px 18px}.card{padding:18px 16px}}
+@media (max-width:760px){
+  .row{grid-template-columns:60px 1fr;gap:16px}
+  .num{font-size:40px}.rowright{grid-column:2;text-align:left}
+  .grid2{grid-template-columns:1fr}
+  .setting{flex-direction:column;align-items:flex-start}.setting .ctl{text-align:left;width:100%}
+  .stages{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mast">
+      <div>
+        <h1>Night <em>Desk</em></h1>
+        <div class="rail" id="rail">Loading…</div>
+      </div>
+      <div class="sw">
+        <span class="rail">Nightly schedule</span>
+        <button class="toggle" id="sched" aria-pressed="false" aria-label="Nightly schedule"></button>
+      </div>
+    </div>
+  </header>
+
+  <div id="status"></div>
+  <div id="setup"></div>
+
+  <section id="sec-record">
+    <div class="shead"><h3>What it has published</h3><span class="rail" id="count"></span></div>
+    <p class="hint">Every video, with the fact-check behind it. The bar shows how many claims were
+      confirmed, corrected, or cut before publishing.</p>
+    <div id="ledger"></div>
+  </section>
+
+  <section>
+    <div class="shead"><h3>Up next</h3></div>
+    <p class="hint">Topics you add here are made before anything else. Anything left over waits for
+      the following night.</p>
+    <div class="card">
+      <label for="topic">Add a topic</label>
+      <div style="display:flex;gap:11px">
+        <input type="text" id="topic" placeholder="e.g. why RAG is losing to long context windows">
+        <button class="btn" id="addTopic">Add</button>
+      </div>
+    </div>
+    <div id="topics"></div>
+  </section>
+
+  <section>
+    <div class="shead"><h3>What it covers</h3></div>
+    <p class="hint">Subjects it works through every night, in order. Each one carries its own
+      sources and its own rules about what counts as proof.</p>
+    <div id="beats"></div>
+  </section>
+
+  <section>
+    <div class="shead"><h3>Settings</h3></div>
+    <div class="card" id="settings"></div>
+  </section>
+
+  <section>
+    <div class="shead"><h3>If something looks wrong</h3></div>
+    <div class="card">
+      <div class="setting">
+        <div class="lab"><b>Make one now</b><span>Starts a video immediately instead of waiting for tonight. Takes about an hour.</span></div>
+        <div class="ctl"><button class="btn ghost" id="runNow">Make one now</button></div>
+      </div>
+      <div class="setting">
+        <div class="lab"><b>Last night's log</b><span>The raw record of what happened, useful if you need to ask someone for help.</span></div>
+        <div class="ctl"><button class="btn ghost" id="showLog">Open log</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<dialog id="dlg"><div class="dlg-h"><strong id="dlgTitle"></strong>
+  <button class="btn ghost" onclick="document.getElementById('dlg').close()">Close</button></div>
+  <div class="dlg-b" id="dlgBody"></div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+const T="__TOKEN__";
+const $=s=>document.querySelector(s);
+const titleCase=s=>String(s).split(/\s+/).map(w=>w.length<=2?w.toUpperCase():w[0].toUpperCase()+w.slice(1)).join(" ");
+const sentence=s=>{s=String(s||"").trim();return s?s[0].toUpperCase()+s.slice(1):s};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let S={};
+
+const api=(p,b)=>fetch(p+(p.includes("?")?"&":"?")+"t="+T,b?{method:"POST",headers:{"Content-Type":"application/json","X-Token":T},body:JSON.stringify(b)}:{headers:{"X-Token":T}}).then(r=>r.json());
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),2600);}
+async function act(p,b,msg){const r=await api(p,b||{});if(r.error){toast(r.error);return null}if(msg)toast(msg);await load();return r}
+
+const STAGES=["Reading sources","Writing the script","Checking the facts","Recording narration","Rendering video","Publishing"];
+
+function renderStatus(){
+  const el=$("#status");
+  if(S.running){
+    const i=STAGES.indexOf(S.stage);
+    const mins=S.started_at?Math.max(0,Math.round((Date.now()-new Date(S.started_at))/60000)):null;
+    el.className="status is-run";
+    el.innerHTML=`<div class="rail"><span class="dot"></span>Working now${mins!==null?` · ${mins} min so far`:""}</div>
+      <h2>${esc(S.stage||"Starting up")}</h2>
+      <p>It is making tonight's video. You can close this page — it keeps going.</p>
+      <div class="stages">${STAGES.map((s,n)=>`<div class="stg ${n<i?"done":n===i?"now":""}">${esc(s)}</div>`).join("")}</div>`;
+  }else if(S.failed){
+    el.className="status is-bad";
+    const why=(S.attention.match(/^\*\*Reason:\*\*\s*(.+)$/m)||[])[1]||S.reason||"Something stopped it.";
+    el.innerHTML=`<div class="rail">Needs you</div><h2>Last night did not finish</h2>
+      <p>${esc(why)}. Nothing was lost — the work so far is saved, and it will pick up where it left off
+      on the next run. You can also start one now below.</p>`;
+  }else{
+    const last=S.ledger[0];
+    el.className="status";
+    el.innerHTML=`<div class="rail">Idle</div>
+      <h2>${S.schedule_on?"Ready for tonight":"Schedule is off"}</h2>
+      <p>${S.schedule_on
+        ?`It runs by itself overnight and makes ${S.config.VIDEOS_PER_RUN||1} video${(S.config.VIDEOS_PER_RUN||1)>1?"s":""}. ${last?`The last one was “${esc(last.title)}”.`:"Nothing published yet."}`
+        :"Nothing will be made until you turn the nightly schedule back on."}</p>`;
+  }
+}
+
+function renderSetup(){
+  const bad=S.health.filter(h=>!h.ok);
+  if(!bad.length){$("#setup").innerHTML="";return}
+  const needsYT=bad.some(h=>h.name==="YouTube connection");
+  $("#setup").innerHTML=`<section style="margin-top:26px"><div class="shead"><h3>Finish setting up</h3>
+    <span class="rail">${S.health.length-bad.length} of ${S.health.length} ready</span></div>
+    <p class="hint">It cannot publish until these are done. Each one says exactly what to do.</p>
+    <div class="card">${S.health.map(h=>`<div class="chk ${h.ok?"ok":"no"}">
+      <span class="m">${h.ok?"✓":"✗"}</span><div class="t"><b>${esc(h.name)}</b>
+      ${h.ok?"":`<span>${esc(h.fix).replace(/(brew install [a-z-]+|sudo pmset[^\\s].*)$/,'</span><code>$1</code><span>')}</span>`}</div></div>`).join("")}
+    ${needsYT?`<div style="margin-top:18px"><button class="btn" id="connYT">Connect YouTube</button>
+      <p class="hint" style="margin-top:11px">Opens a Google sign-in window. Pick the channel you want
+      videos published to. You only do this once.</p></div>`:""}
+    </div></section>`;
+  if(needsYT)$("#connYT").onclick=()=>act("/api/connect-youtube",{},"Sign-in window opening…");
+}
+
+function renderLedger(){
+  $("#count").textContent=S.ledger.length?`${S.ledger.length} published`:"";
+  if(!S.ledger.length){$("#ledger").innerHTML=`<p class="empty">Nothing yet. The first one appears here after tonight's run.</p>`;return}
+  $("#ledger").innerHTML=S.ledger.map((r,i)=>{
+    const t=r.tally||{},c=t.checked||0,co=t.corrected||0,cu=t.cut||0,okc=Math.max(0,c-co-cu);
+    const bar=c?`<div class="tally" title="${c} claims checked · ${co} corrected · ${cu} cut">
+        <i class="t-ok" style="width:${okc/c*100}%"></i><i class="t-cor" style="width:${co/c*100}%"></i>
+        <i class="t-cut" style="width:${cu/c*100}%"></i></div>
+      <div class="rail" style="margin-top:7px">${c} claims checked · <b>${co}</b> corrected · <b>${cu}</b> cut</div>`:"";
+    return `<div class="row"><div class="num">${String(S.ledger.length-i).padStart(2,"0")}</div>
+      <div><h4><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h4>
+      <div class="rail">${esc(r.date)} · runtime <b>${esc(r.runtime)}</b></div>${bar}</div>
+      <div class="rowright">${r.slug?`<button class="link" data-v="${esc(r.slug)}">Fact-check</button>`:""}</div></div>`;
+  }).join("");
+  document.querySelectorAll("[data-v]").forEach(b=>b.onclick=async()=>{
+    const r=await api("/api/verification?slug="+encodeURIComponent(b.dataset.v));
+    $("#dlgTitle").textContent="What the fact-check found";
+    $("#dlgBody").innerHTML=r.error?`<p>${esc(r.error)}</p>`:`<pre>${esc(r.text)}</pre>`;
+    $("#dlg").showModal();
+  });
+}
+
+function renderTopics(){
+  $("#topics").innerHTML=S.topics.length
+    ?`<div>${S.topics.map((t,i)=>`<span class="pill">${i<(+S.config.VIDEOS_PER_RUN||1)?"▸ ":""}${esc(t)}
+        <button data-rm="${esc(t)}" aria-label="Remove">×</button></span>`).join("")}</div>
+      <p class="rail" style="margin-top:9px">▸ marks the ones being made tonight</p>`
+    :`<p class="empty">Nothing queued. Tonight it will pick its own topics from the subjects below.</p>`;
+  document.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>act("/api/topic/remove",{text:b.dataset.rm},"Removed"));
+}
+
+function renderBeats(){
+  $("#beats").innerHTML=S.beats.map(b=>`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div><h4>${esc(titleCase(b.name))}</h4>
+      <div class="rail">${b.runtime} minute video</div></div>
+      <button class="btn ghost" data-b="${esc(b.file)}">Edit</button></div>
+    <p style="margin:11px 0 0;color:var(--paper-dim)">${esc(sentence(b.summary)||"No description yet.")}</p></div>`).join("")
+    ||`<p class="empty">No subjects set up yet.</p>`;
+  document.querySelectorAll("[data-b]").forEach(btn=>btn.onclick=()=>{
+    const b=S.beats.find(x=>x.file===btn.dataset.b);
+    $("#dlgTitle").textContent="Edit "+titleCase(b.name);
+    $("#dlgBody").innerHTML=`<label for="rt">Video length (minutes)</label>
+      <input type="number" id="rt" min="5" max="120" value="${b.runtime}" style="width:120px">
+      <label for="bd" style="margin-top:20px">Instructions</label>
+      <p class="hint" style="margin:-4px 0 10px">Say what to cover, where to look, and — most importantly —
+        what counts as proof. These words are given to it directly each night.</p>
+      <textarea id="bd">${esc(b.body)}</textarea>
+      <div style="margin-top:16px"><button class="btn" id="saveB">Save</button></div>`;
+    $("#dlg").showModal();
+    $("#saveB").onclick=async()=>{
+      const r=await act("/api/beat",{file:b.file,runtime:+$("#rt").value,body:$("#bd").value},"Saved");
+      if(r)$("#dlg").close();
+    };
+  });
+}
+
+function renderSettings(){
+  const c=S.config,v=c.VOICE||"af_heart";
+  const cur=S.voices.find(x=>x.id===v);
+  $("#settings").innerHTML=`
+    <div class="setting"><div class="lab"><b>Videos per night</b>
+      <span>Made one after another. More than two means it is still working at breakfast.</span></div>
+      <div class="ctl"><select id="vpr">${[1,2,3,4,5,6].map(n=>`<option ${+c.VIDEOS_PER_RUN===n?"selected":""}>${n}</option>`).join("")}</select></div></div>
+    <div class="setting"><div class="lab"><b>Narrator</b>
+      <span>${esc(cur?cur.note:"")}${cur&&!cur.measured?" — needs a quick calibration before lengths are accurate.":""}</span></div>
+      <div class="ctl"><select id="voice">${S.voices.map(o=>`<option value="${o.id}" ${o.id===v?"selected":""}>${esc(o.name)}${o.measured?"":" (uncalibrated)"}</option>`).join("")}</select></div></div>
+    <div class="setting"><div class="lab"><b>Reading pace</b>
+      <span>Slower is easier to follow over half an hour. Video length is adjusted to match automatically.</span></div>
+      <div class="ctl"><select id="speed">${[["0.85","Slower"],["0.95","Relaxed"],["1.0","Normal"],["1.1","Brisk"]].map(([val,lab])=>`<option value="${val}" ${(+c.SPEED||1)==+val?"selected":""}>${lab}</option>`).join("")}</select></div></div>`;
+  $("#vpr").onchange=e=>act("/api/config",{key:"VIDEOS_PER_RUN",value:e.target.value},"Saved");
+  $("#voice").onchange=e=>act("/api/config",{key:"VOICE",value:e.target.value},"Narrator changed");
+  $("#speed").onchange=e=>act("/api/config",{key:"SPEED",value:e.target.value},"Saved");
+}
+
+async function load(){
+  S=await api("/api/state");
+  $("#rail").innerHTML=`${S.running?"Working":S.failed?"Needs attention":"Idle"} · <b>${S.ledger.length}</b> published · saves to <b>${esc(S.root.replace(/^.*\//,""))}</b>`;
+  $("#sched").setAttribute("aria-pressed",String(!!S.schedule_on));
+  renderStatus();renderSetup();renderLedger();renderTopics();renderBeats();renderSettings();
+}
+
+$("#sched").onclick=()=>act("/api/schedule",{on:$("#sched").getAttribute("aria-pressed")!=="true"},"Schedule updated");
+$("#addTopic").onclick=()=>{const i=$("#topic");if(!i.value.trim())return toast("Type a topic first");
+  act("/api/topic/add",{text:i.value.trim()},"Added to the queue").then(()=>i.value="");};
+$("#topic").addEventListener("keydown",e=>{if(e.key==="Enter")$("#addTopic").click()});
+$("#runNow").onclick=()=>act("/api/run",{},"Started — it will take about an hour");
+$("#showLog").onclick=async()=>{const r=await api("/api/log");
+  $("#dlgTitle").textContent="Last night's log";$("#dlgBody").innerHTML=`<pre>${esc(r.text)}</pre>`;$("#dlg").showModal();};
+
+load();setInterval(load,20000);
+</script>
+</body></html>

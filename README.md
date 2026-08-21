@@ -45,6 +45,20 @@ You are the publisher. You are responsible for what goes out under your name.
 
 ---
 
+## The dashboard
+
+Everything below can be driven from a local web dashboard — no terminal, no editing
+config files. Click the menu bar icon and choose **Open dashboard…**, or run
+`python3 daily/dashboard.py --open`.
+
+It shows what the machine is doing right now and which stage it has reached, the fact-check
+record behind every published video, and a setup checklist that names the exact command
+for anything still missing. You can queue a topic, rewrite what it covers, change the
+narrator, and start a run — all from the page.
+
+It binds to `127.0.0.1` only and requires a token generated at startup, so nothing on the
+network and no other site in your browser can reach it.
+
 ## What you get
 
 - **~20–35 minute narrated explainers**, chaptered, with slate cards and abstract
@@ -154,6 +168,7 @@ Compute is local and free. The real costs:
 
 | | |
 |---|---|
+| [docs/DASHBOARD.md](docs/DASHBOARD.md) | the non-technical route — running it without a terminal |
 | [docs/SETUP.md](docs/SETUP.md) | full install, including the Google Cloud side |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | every setting, and what breaks if it is wrong |
 | [docs/BEATS.md](docs/BEATS.md) | writing beats, and the verification rules that belong in them |

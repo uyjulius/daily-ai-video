@@ -44,6 +44,8 @@ TOPICS   = os.path.join(ROOT, "TOPICS.md")
 CONFIG   = os.path.join(DAILY, "config.sh")
 NEWVIDEO = os.path.join(DAILY, "new-video.sh")
 BEATS_DIR= os.path.join(ROOT, "beats")
+DASHBOARD= os.path.join(DAILY, "dashboard.py")
+DASH_URL = os.path.join(DAILY, "dashboard.url")
 PLIST    = os.path.join(HOME, "Library/LaunchAgents/com.dailyaivideo.daily-ai-video.plist")
 LABEL    = "com.dailyaivideo.daily-ai-video"
 
@@ -221,6 +223,7 @@ class Indicator(AppKit.NSObject):
         self = objc.super(Indicator, self).init()
         if self is None:
             return None
+        self.dash = None
         self.item = AppKit.NSStatusBar.systemStatusBar().statusItemWithLength_(
             AppKit.NSVariableStatusItemLength)
         self.menu = AppKit.NSMenu.alloc().init()
@@ -296,6 +299,9 @@ class Indicator(AppKit.NSObject):
             self.setTitleSpec(("○", AppKit.NSColor.secondaryLabelColor(), ""))
             self.add("Idle — next run 02:07")
 
+        self.sep()
+        self.add("Open dashboard…", "openDashboard:")
+
         # Last published video, always useful.
         self.sep()
         url = st.get("last_url", "")
@@ -361,6 +367,26 @@ class Indicator(AppKit.NSObject):
         self.add("Quit indicator", "quit:")
 
     # -------------------------------------------------------------------- actions
+    def openDashboard_(self, _):
+        """Open the web dashboard, reusing the running server if there is one.
+
+        Spawning a second server would mean a second port and a second token, so
+        the URL is published to a file and reused while the process is alive.
+        """
+        alive = self.dash is not None and self.dash.poll() is None
+        if alive and os.path.exists(DASH_URL):
+            subprocess.Popen(["open", open(DASH_URL).read().strip()])
+            return
+        env = dict(os.environ, DAILY_VIDEO_ROOT=ROOT)
+        try:
+            self.dash = subprocess.Popen(
+                ["/usr/bin/python3", DASHBOARD, "--open"],
+                env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError:
+            subprocess.Popen(["osascript", "-e",
+                              'display notification "Could not start the dashboard." '
+                              'with title "Daily AI Video"'])
+
     def openLast_(self, _):
         if self.last_url:
             subprocess.Popen(["open", self.last_url])

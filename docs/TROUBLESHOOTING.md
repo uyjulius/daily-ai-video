@@ -129,6 +129,9 @@ resumes rather than rebuilds. The next scheduled run picks it up automatically.
 
 ## Reading the state
 
+Most of this is visible in the dashboard (menu bar → **Open dashboard…**), which is the
+faster route. From a terminal:
+
 ```bash
 cat $ROOT/NEEDS-ATTENTION.md          # present = last run failed, says why
 cat $ROOT/DAILY-LOG.md                # ledger of everything published

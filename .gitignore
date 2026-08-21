@@ -4,6 +4,7 @@ token.json
 client_secret*.json
 daily/config.sh
 daily/run.lock
+daily/dashboard.url
 daily/status.json
 daily/logs/
 voice-audition/
