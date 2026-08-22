@@ -41,6 +41,7 @@ LEDGER = os.path.join(ROOT, "DAILY-LOG.md")
 TOPICS = os.path.join(ROOT, "TOPICS.md")
 BEATS = os.path.join(ROOT, "beats")
 ATTENTION = os.path.join(ROOT, "NEEDS-ATTENTION.md")
+AUTH_STATE = os.path.join(DAILY, "auth.json")
 TOKEN_FILE = os.path.join(HOME, ".config", "topic-to-youtube", "token.json")
 LABEL = "com.dailyaivideo.run"
 
@@ -230,6 +231,36 @@ def infer_stage():
     return os.path.basename(best), "Starting up"
 
 
+def auth_state():
+    """What the last run found. Never probes on its own — the dashboard refreshes
+    every 20s and a live check per refresh would be an API call per refresh."""
+    try:
+        d = json.load(open(AUTH_STATE))
+        return bool(d.get("ok")), d.get("checked_at", "")
+    except Exception:
+        return None, ""
+
+
+def auth_probe():
+    """One live round-trip, only when the operator asks for it."""
+    try:
+        r = subprocess.run(["claude", "-p", "Reply with the single word: ok",
+                            "--max-turns", "1", "--output-format", "text"],
+                           capture_output=True, text=True, timeout=90)
+        out = (r.stdout or "") + (r.stderr or "")
+        ok = r.returncode == 0 and not re.search(
+            r"Failed to authenticate|OAuth session expired|Invalid API key", out, re.I)
+    except Exception:
+        ok = False
+    try:
+        os.makedirs(DAILY, exist_ok=True)
+        json.dump({"ok": ok, "checked_at": __import__("datetime").datetime.now()
+                   .isoformat(timespec="seconds")}, open(AUTH_STATE, "w"))
+    except OSError:
+        pass
+    return ok
+
+
 def health():
     """Plain-language setup checks. Each item says what to do if it is not ready."""
     def have(cmd):
@@ -239,6 +270,8 @@ def health():
          "Install ffmpeg: open Terminal and run  brew install ffmpeg"),
         ("Claude Code", have("claude"),
          "Install Claude Code from claude.com/claude-code, then sign in"),
+        ("Claude sign-in", auth_state()[0] is not False,
+         "Your Claude session expired. Open Terminal, run  claude  then type /login"),
         ("Google Chrome", os.path.isdir("/Applications/Google Chrome.app"),
          "Install Google Chrome — it is used to draw the title cards"),
         ("Narration engine", os.path.exists(os.path.join(ROOT, ".venv-tts", "bin", "python")),
@@ -281,6 +314,7 @@ def state():
         "ledger": read_ledger(),
         "health": health(),
         "attention": open(ATTENTION).read() if os.path.exists(ATTENTION) else "",
+        "auth": {"ok": auth_state()[0], "checked_at": auth_state()[1]},
         "root": ROOT,
     }
 
@@ -396,6 +430,8 @@ class Handler(BaseHTTPRequestHandler):
             subprocess.run(["launchctl", "load" if d.get("on") else "unload", plist],
                            capture_output=True)
             return {"ok": True, "on": schedule_on()}
+        if path == "/api/check-auth":
+            return {"ok": auth_probe()}
         if path == "/api/connect-youtube":
             py = os.path.join(HOME, ".venv-ytapi", "bin", "python")
             script = os.path.join(SKILL, "yt_auth.py")

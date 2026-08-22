@@ -60,6 +60,14 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
   [ -x "$ROOT/.venv-tts/bin/python" ] && ok "TTS venv" || no "TTS venv missing"
   [ -x "$HOME/.venv-ytapi/bin/python" ] && ok "YouTube API venv" || no "YouTube API venv missing"
   [ -f "$HOME/.config/topic-to-youtube/token.json" ] && ok "YouTube token" || no "YouTube token — run yt_auth.py"
+  # An expired CLI session breaks every run and nothing else detects it.
+  if claude -p "Reply with the single word: ok" --max-turns 1 --output-format text >/tmp/.authck 2>&1 \
+     && ! grep -qiE "Failed to authenticate|OAuth session expired" /tmp/.authck; then
+    ok "Claude sign-in"
+  else
+    no "Claude sign-in EXPIRED — run  claude  then /login"
+  fi
+  rm -f /tmp/.authck
   for L in run check menubar; do
     launchctl list 2>/dev/null | awk -F'\t' -v l="com.dailyaivideo.$L" '$NF==l{f=1} END{exit !f}' \
       && ok "agent com.dailyaivideo.$L loaded" || no "agent com.dailyaivideo.$L NOT loaded"

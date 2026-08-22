@@ -37,6 +37,11 @@ TTS_JOBS=6; TTS_THREADS=2; MP3_JOBS=6
 # shellcheck source=/dev/null
 [ -f "$CONFIG" ] && . "$CONFIG"
 RUN_STARTED="$(date '+%Y-%m-%dT%H:%M:%S')"
+
+# Must be set BEFORE auth_ok() runs, not just before the retry loop — the script runs
+# under `set -u`, so referencing it unset would abort and report a false "sign-in
+# expired" on every run. Overridable so the loop can be tested with a stub binary.
+CLAUDE_BIN="${CLAUDE_BIN:-/opt/homebrew/bin/claude}"
 MIN_FREE_GB=12
 
 # The skill reads $TTS_PY to locate the Kokoro interpreter; point it at the
@@ -220,6 +225,46 @@ EOM
   notify "$reason" "$detail — see NEEDS-ATTENTION.md"
 }
 
+# ----------------------------------------------------------------------- auth
+# WHY THIS EXISTS (22 Aug 2026): the CLI's OAuth session expired overnight. Every
+# attempt died in seconds with "Failed to authenticate: OAuth session expired and
+# could not be refreshed" — all three beats, nine attempts, whole run over in 43
+# seconds. Retrying is worse than useless against an expired credential, and the
+# generic "claude exited 1" in the marker told nobody what to actually do.
+#
+# So: check once up front, and if an attempt dies this way, stop retrying and say
+# plainly that a human has to sign in.
+AUTH_STATE="$DAILY/auth.json"
+
+auth_error_in() {  # $1 = file — does this output carry an auth failure?
+  grep -qiE "Failed to authenticate|OAuth session expired|Invalid API key|Please run .?claude login" "$1" 2>/dev/null
+}
+
+# Record auth state for the dashboard, which must not run its own probe on every
+# refresh. Written even on success so the age of the last check is visible.
+record_auth() {
+  RA_OK="$1" RA_FILE="$AUTH_STATE" /usr/bin/python3 -c '
+import json, os, datetime
+json.dump({"ok": os.environ["RA_OK"] == "1",
+           "checked_at": datetime.datetime.now().isoformat(timespec="seconds")},
+          open(os.environ["RA_FILE"], "w"))
+' 2>/dev/null || true
+}
+
+# One cheap round-trip. Cheaper than discovering the problem after a wasted night.
+auth_ok() {
+  local out="$DAILY/logs/authcheck.txt"
+  "$CLAUDE_BIN" -p "Reply with the single word: ok" --max-turns 1 \
+    --output-format text >"$out" 2>&1
+  local rc=$?
+  if [ $rc -ne 0 ] || auth_error_in "$out"; then
+    record_auth 0
+    return 1
+  fi
+  record_auth 1
+  return 0
+}
+
 # ------------------------------------------------------------- pre-flight checks
 echo "disk free before: $(free_gb)G"
 echo -n "tts interpreter: "
@@ -397,6 +442,19 @@ BRIEF
 cd "$ROOT" || exit 1
 TODAY="$(date +%Y-%m-%d)"
 
+# Abort before building anything if the CLI cannot authenticate. Nothing downstream
+# can succeed, and a clear message here saves a whole night.
+echo -n "claude auth: "
+if auth_ok; then
+  echo "OK"
+else
+  echo "FAILED"
+  fail "Claude sign-in expired" \
+       "The Claude CLI could not authenticate, so no video can be made. This needs a person: open Terminal and run  claude  then use /login . Nothing was lost; the next run will pick up normally once you are signed in."
+  echo "END $(date '+%Y-%m-%d %H:%M:%S')"
+  exit 1
+fi
+
 # Count, not boolean: with VIDEOS_PER_RUN>1 "something published today" is no longer
 # the same question as "this video published". Each video compares against the count
 # taken just before it started.
@@ -428,11 +486,10 @@ echo "plan: $VIDEOS_PER_RUN video(s) · voice $VOICE @ ${SPEED}x · ${WPM} wpm �
 #          so re-invoke with a RESUME brief until a URL is actually logged.
 # Attempt 1 builds from scratch; later attempts finish the workspace already on disk,
 # so a turn-exhausted night costs minutes, not the whole day.
-# CLAUDE_BIN is overridable so the retry loop can be exercised with a stub binary.
-CLAUDE_BIN="${CLAUDE_BIN:-/opt/homebrew/bin/claude}"
 STATUS=1
 MADE=0
 FAILED_VIDEOS=0
+AUTH_DIED=0
 
 for video in $(seq 1 "$VIDEOS_PER_RUN"); do
   BASE=$(published_count)
@@ -533,12 +590,25 @@ $ALREADY"
       echo "NOTE: video $video attempt $attempt hit the $MAX_TURNS-turn cap (exits 0 — not a crash)"
     fi
 
+    # Retrying an expired credential just fails faster. Bail out of the whole run.
+    if auth_error_in "$ATTEMPT_OUT"; then
+      echo "AUTH FAILURE mid-run — abandoning remaining attempts and videos"
+      record_auth 0
+      AUTH_DIED=1
+      break
+    fi
+
     if [ "$(published_count)" -gt "$BASE" ]; then
       echo "video $video published on attempt $attempt"
       break
     fi
     echo "video $video attempt $attempt ended without a published URL"
   done
+
+  if [ "$AUTH_DIED" -eq 1 ]; then
+    FAILED_VIDEOS=$((FAILED_VIDEOS + 1))
+    break
+  fi
 
   if [ "$(published_count)" -gt "$BASE" ]; then
     MADE=$((MADE + 1))
@@ -583,12 +653,16 @@ if [ "$MADE" -eq 0 ]; then
   echo "WARNING: no published URL logged for $TODAY — run did not complete to upload"
   echo "$TODAY | INCOMPLETE — built but not published; assets preserved for resume" >> "$LEDGER"
 
-  if [ "$STATUS" -ne 0 ]; then
-    detail="claude exited $STATUS. Assets for any unfinished workspace were preserved, so a retry can resume rather than rebuild."
+  if [ "$AUTH_DIED" -eq 1 ]; then
+    fail "Claude sign-in expired" \
+         "The Claude CLI stopped authenticating partway through, so the run was abandoned. This needs a person: open Terminal, run  claude  then use /login . Work already done was preserved and the next run will resume it."
+  elif [ "$STATUS" -ne 0 ]; then
+    fail "No video published today" \
+         "claude exited $STATUS. Assets for any unfinished workspace were preserved, so a retry can resume rather than rebuild."
   else
-    detail="claude exited cleanly but never published — most likely it hit the turn cap. Assets preserved for resume."
+    fail "No video published today" \
+         "claude exited cleanly but never published — most likely it hit the turn cap. Assets preserved for resume."
   fi
-  fail "No video published today" "$detail"
 elif [ "$MADE" -lt "$VIDEOS_PER_RUN" ]; then
   # Partial success still loses a video, so it still raises the marker. Silence here
   # would mean asking for 3 and quietly getting 1.

@@ -5,7 +5,7 @@ look like success, which is why they are worth reading before you need them.
 
 ---
 
-## The four silent failures
+## The five silent failures
 
 ### 1. `claude -p` hits its turn limit and exits 0
 
@@ -28,7 +28,35 @@ claude --max-turns 1 -p "Run 'echo A' with bash, then run 'echo B', then report 
 # → "Error: Reached max turns (1)" ... and exit code 0
 ```
 
-### 2. A long shell stage is killed with no error written anywhere
+### 2. The Claude CLI session expires and every run dies instantly
+
+**Symptom:** a whole night produces nothing. The log shows every attempt failing in
+seconds:
+
+```
+Failed to authenticate: OAuth session expired and could not be refreshed
+```
+
+Three beats, nine attempts, whole run over in 43 seconds (seen 22 Aug 2026).
+
+**Cause:** the CLI's OAuth session expired. Nothing downstream can work, and no amount
+of retrying helps — retrying an expired credential just fails faster.
+
+**Fix:** `claude` in a terminal, then `/login`.
+
+**What the pipeline now does about it:**
+- A pre-flight check runs one cheap round-trip before any work starts. If it fails the
+  run aborts in about a second, with a marker that names the actual problem and the
+  exact command, instead of a generic "claude exited 1".
+- If a session expires *mid-run*, the remaining attempts and videos are abandoned
+  immediately rather than retried.
+- The result is recorded to `daily/auth.json`, and the dashboard shows it as
+  **Claude sign-in** with a **Check sign-in** button.
+- `./install.sh --check` tests it too.
+
+This is the one failure the system cannot self-heal: it needs a human at a keyboard.
+
+### 3. A long shell stage is killed with no error written anywhere
 
 **Symptom:** the audio builder stops mid-run, always around the same point. `tts.log`
 ends mid-line. No error, no traceback. Re-running gets a bit further, then stops again.
@@ -42,7 +70,7 @@ not a bug in the stage — rendering that same chapter alone succeeds.
 **General rule: when a long stage vanishes without an error, suspect a timeout on
 whoever called it before you go hunting for a bug inside it.**
 
-### 3. macOS TCC blocks launchd from `~/Documents`, `~/Desktop`, `~/Downloads`
+### 4. macOS TCC blocks launchd from `~/Documents`, `~/Desktop`, `~/Downloads`
 
 **Symptom:** works perfectly when you run it by hand; fails as a scheduled job with
 `Operation not permitted` — often exit 126.
@@ -69,7 +97,7 @@ conclude the interpreter is broken.
 > **Test scheduled jobs with `launchctl kickstart`, never only from your shell.** Your
 > shell has permissions launchd does not. This is the single most valuable habit here.
 
-### 4. Changing the voice silently changes video length
+### 5. Changing the voice silently changes video length
 
 Scripts are written to a word budget *up front*, from `WPM`. That rate belongs to the
 voice, not the pipeline. Measured on identical text: `af_heart` 148 wpm, `am_liam` 167 wpm

@@ -78,6 +78,15 @@ unattended and will not work that out on its own.
 
 There is more on this in [BEATS.md](BEATS.md).
 
+## If it says your sign-in expired
+
+This is the one thing that stops everything, and the only one the tool cannot fix
+itself. Open Terminal, type `claude`, press return, then type `/login`. Come back and
+press **Check sign-in**.
+
+It happens every so often because the sign-in is time-limited. Nothing is lost — the
+next run carries on.
+
 ## If something looks wrong
 
 The status panel names the problem. Beyond that, **Open log** shows the raw record — not

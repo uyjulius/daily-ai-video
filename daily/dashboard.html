@@ -256,17 +256,28 @@ function renderSetup(){
   const bad=S.health.filter(h=>!h.ok);
   if(!bad.length){$("#setup").innerHTML="";return}
   const needsYT=bad.some(h=>h.name==="YouTube connection");
+  const authBad=bad.some(h=>h.name==="Claude sign-in");
   $("#setup").innerHTML=`<section style="margin-top:26px"><div class="shead"><h3>Finish setting up</h3>
     <span class="rail">${S.health.length-bad.length} of ${S.health.length} ready</span></div>
     <p class="hint">It cannot publish until these are done. Each one says exactly what to do.</p>
     <div class="card">${S.health.map(h=>`<div class="chk ${h.ok?"ok":"no"}">
       <span class="m">${h.ok?"✓":"✗"}</span><div class="t"><b>${esc(h.name)}</b>
       ${h.ok?"":`<span>${esc(h.fix).replace(/(brew install [a-z-]+|sudo pmset[^\\s].*)$/,'</span><code>$1</code><span>')}</span>`}</div></div>`).join("")}
+    ${authBad?`<div class="warn" style="margin-top:16px"><b>Your Claude sign-in has expired.</b>
+      Nothing can be made until you sign in again. Open Terminal, type <code>claude</code>,
+      then type <code>/login</code>. Come back and press Check again.</div>`:""}
+    <div style="margin-top:14px"><button class="btn ghost" id="ckAuth">Check sign-in</button>
+      <span class="rail" id="authAge" style="margin-left:12px"></span></div>
     ${needsYT?`<div style="margin-top:18px"><button class="btn" id="connYT">Connect YouTube</button>
       <p class="hint" style="margin-top:11px">Opens a Google sign-in window. Pick the channel you want
       videos published to. You only do this once.</p></div>`:""}
     </div></section>`;
   if(needsYT)$("#connYT").onclick=()=>act("/api/connect-youtube",{},"Sign-in window opening…");
+  const a=S.auth||{};
+  $("#authAge").textContent=a.checked_at?`Last checked ${a.checked_at.replace("T"," ").slice(0,16)}`:"Not checked yet";
+  $("#ckAuth").onclick=async e=>{e.target.disabled=true;e.target.textContent="Checking…";
+    const r=await api("/api/check-auth",{});e.target.disabled=false;e.target.textContent="Check sign-in";
+    toast(r.ok?"Signed in — all good":"Still signed out. Run claude then /login");await load();};
 }
 
 function renderLedger(){
