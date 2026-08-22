@@ -150,6 +150,27 @@ Plain text only. Spell out numbers, years ("twenty twenty-six"), currencies ("el
 million dollars"); no markdown, tables, or URLs. Paragraph breaks become breathing
 pauses. Open each chapter "Chapter N. <Title>." Keep the analyst voice.
 
+### Pacing: every video so far gets heavier as it goes
+
+Measured across thirteen videos: the second half runs **7% to 46% longer per chapter**
+than the first, median about +26%. Not one tapers. Chapter 1 lands around 230-260 words
+and chapters 8-10 around 550-620.
+
+That is backwards. Attention falls across half an hour; the load should fall with it.
+As built, the densest material arrives where the fewest people are still watching.
+
+**Budget the chapters deliberately instead of letting them grow:**
+
+| Position | Share of the word budget | Job |
+|---|---|---|
+| Opening | ~5% | the hook and the claim |
+| Chapters 2-4 | **the longest chapters** | the evidence, while attention is highest |
+| Middle | steady | the turn — the complication or counter-argument |
+| Final third | **shorter than the middle** | consequence, then stop |
+
+A closing chapter should be among the *shortest*, not the longest. If the ending needs
+600 words to land, the argument has not been made yet — fix that earlier, not here.
+
 ### Craft: what an audit of the first twelve videos found
 
 Measured across ~53,000 narrated words, not asserted. These are the house's actual bad
@@ -179,6 +200,17 @@ real opening.
 **4. One judgement rhythm, repeated.** 249 sentences (one in eighteen) open with
 "That is / It is / This is". Over half an hour it drones.
 *Fix:* vary the cadence. Let some evidence land without a verdict attached.
+
+**Lead with the fact, not the date.** Seven of the first twelve videos opened "On the
+seventeenth of August, twenty twenty-six, X did Y" — the date first, the interesting
+thing second. Compare the strongest opening in the set, which does the reverse:
+
+> Ten million dollars. That is what Google paid, at auction, on Friday the fourteenth
+> of August, for everything a dead airline ever wrote down about itself.
+
+Same facts, same sentence even — but the arresting number goes first and the date lands
+where it belongs, as context. The date is almost never the most interesting thing you
+know. Open on the number, the contradiction, or the image; date it in the next breath.
 
 **5. Seven of twelve open with the same dateline.** "On the seventeenth of August,
 twenty twenty-six, X did Y." Reliable, and interchangeable.
@@ -264,6 +296,18 @@ finished video with no artwork for it and nothing telling you why.
 Two of the four stages below are per chapter — repeat them for every chapter slug before
 moving on — and two are workspace-wide, run once after every chapter has been through the
 per-chapter step that precedes them:
+
+**The abstract escape hatch has become the default — check yourself.** Audited 22 Aug
+2026: **zero of seventeen** workspaces had a `credits.json`, meaning every video ever
+made took the AI-generated-abstract route and no video has ever carried a real
+photograph. Every one of them looks the same as a result.
+
+Abstract backdrops are the right answer when the subject *is* named living people and
+a photograph would imply association — that is a real trap and it is why the option
+exists. They are the wrong answer for a credit card's terms, a stock index, a data
+centre outage, or an airline's bankruptcy estate, all of which have safe, plentiful
+public-domain imagery. Reach for abstract when you can name the person a photograph
+would misrepresent. Otherwise fetch the stills.
 
 ```bash
 # 1. Per chapter — repeat for every chapter slug before moving on:

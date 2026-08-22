@@ -321,6 +321,13 @@ transcript PDF does. So it must NOT sit between research and publication.
 Do it in exactly this order, and do not reorder it to match the skill's narrative:
   a. Research from primary sources.
   b. Write narration/ and project.json. THIS is the script the video uses.
+     TAPER THE CHAPTERS. Every one of the first thirteen videos got HEAVIER as it went —
+     second half 7-46% longer per chapter than the first, none tapering. Attention falls
+     over half an hour; the load must fall with it. Put the longest chapters at positions
+     2-4 and make the final third shorter than the middle. A closing chapter should be
+     among the shortest.
+     OPEN ON THE FACT, NOT THE DATE. Seven of twelve opened "On the Nth of August, X did
+     Y". Lead with the number or the contradiction; date it in the next sentence.
   c. STEP 3 below — the adversarial verification gate. Still mandatory, still before
      anything is published. Do not weaken it to save time; it is the reason this
      channel is trustworthy.
@@ -348,7 +355,10 @@ NARRATOR AND LENGTH BUDGET — both matter, and the second one is easy to get wr
   - For the ~@@RUNTIME@@ minute target that is about @@WORDS@@ narrated words. Write to
     that budget up front; drafting long and trimming takes many passes and still overshoots. Follow the skill exactly, including its imagery
 verification rule: read backgrounds/credits.json and check file titles actually match the
-subject before rendering. Prefer abstract backdrops over photographs of real people.
+subject before rendering. Prefer abstract backdrops over photographs of real people — but note that ZERO of
+the first seventeen runs fetched any real imagery at all, so every video looks
+identical. Abstract is for when the subject IS named living people. For a card's
+terms, an index, an outage or an airline estate, fetch the public-domain stills.
 
 STEP 3 - ADVERSARIAL SELF-CHECK. THIS IS A HARD PUBLISH GATE.
 Before uploading anything, attack your own narration script:
