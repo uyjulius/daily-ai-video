@@ -150,6 +150,46 @@ Plain text only. Spell out numbers, years ("twenty twenty-six"), currencies ("el
 million dollars"); no markdown, tables, or URLs. Paragraph breaks become breathing
 pauses. Open each chapter "Chapter N. <Title>." Keep the analyst voice.
 
+### Craft: what an audit of the first twelve videos found
+
+Measured across ~53,000 narrated words, not asserted. These are the house's actual bad
+habits; each one is fixable and each one recurs unless you deliberately break it.
+
+**1. Nobody ever does anything.** Fourteen concrete action verbs in 53,000 words. A
+seven-hour outage happened and no engineer appears in it; companies "say", figures
+"are", positions "are stated". The result is a well-argued lecture rather than a story.
+*Fix:* find the human moment in the material and open on it — someone at a keyboard at
+13:28 UTC, someone reading a clause, someone deciding. Then step back to the argument.
+One concrete scene per video is the minimum; the evidence still carries the case.
+
+**2. The ending is a formula.** Nine of twelve videos closed with a chapter titled
+"What Would Change My Mind", six of them opening with the same two moves — *let me state
+my position plainly*, then *here is how to break it*. Intellectually honest, and by the
+fifth video, recitable.
+*Fix:* keep the falsification conditions — they are the channel's integrity — but stop
+making them a named chapter with a stock opening. Fold them into the closing argument,
+or state them where the relevant claim is made rather than saving them all up.
+
+**3. The narrator keeps announcing what he is about to do.** 115 instances of *let me /
+let us / I want to*; "I want to be" alone appears 21 times. "Now, the chain of causation.
+And I want to walk through it slowly, because…" — that is throat-clearing before content.
+*Fix:* cut the announcement and do the thing. The sentence after it is almost always the
+real opening.
+
+**4. One judgement rhythm, repeated.** 249 sentences (one in eighteen) open with
+"That is / It is / This is". Over half an hour it drones.
+*Fix:* vary the cadence. Let some evidence land without a verdict attached.
+
+**5. Seven of twelve open with the same dateline.** "On the seventeenth of August,
+twenty twenty-six, X did Y." Reliable, and interchangeable.
+*Fix:* the dateline is one option among several — a number with no context, a quotation,
+a question the video will answer, a scene. Vary it.
+
+**Never speak "Chapter zero" or "Introduction".** One video opened with the literal words
+"Chapter zero. Introduction." — three seconds of administration in the most valuable
+three seconds of the video. Numbered chapter labels are house style from Chapter One
+onward; the intro just starts.
+
 ## 4. project.json
 
 Write `project.json` in the workspace:
@@ -343,7 +383,14 @@ Public-domain photographs are not altered content and do not trigger it; a synth
 voice reading your own script does not either.
 
 **Background music (default ON):** generate a rights-free ambient bed once per project —
-`${TTS_PY:-$TTS_PY} $SKILL_DIR/make_music.py <workspace>/music.wav`
+`$TTS_PY $SKILL_DIR/make_music.py <workspace>/music.wav <MINUTES> <slug>`
+
+**Pass both arguments.** `render_videos.py` loops the bed with `-stream_loop -1`, so a
+3-minute file under a 30-minute video is heard ten times — which is what made the score
+on this channel monotonous through 21 Aug 2026. Generate to the video's actual runtime
+plus a minute (31 minutes costs ~17 s) and it never repeats. The slug seeds key, mode,
+chord progression and bell placement, so no two videos share a score; omit it and every
+video gets the same one.
 (name the interpreter explicitly: `$TTS_PY` is set inside build_audiobook.sh and never
 exported, and make_music.py is not executable, so a bare `$TTS_PY …` fails with
 permission denied) — and set `"music": "music.wav"`
