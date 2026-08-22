@@ -326,6 +326,9 @@ Do it in exactly this order, and do not reorder it to match the skill's narrativ
      over half an hour; the load must fall with it. Put the longest chapters at positions
      2-4 and make the final third shorter than the middle. A closing chapter should be
      among the shortest.
+     TITLE: under 60 characters where the argument survives it, 70 hard maximum - past
+     that it truncates in search and on mobile. Front-load the distinctive words. Do not
+     reuse the 'what X actually says' construction; 5 of the first 15 titles did.
      OPEN ON THE FACT, NOT THE DATE. Seven of twelve opened "On the Nth of August, X did
      Y". Lead with the number or the contradiction; date it in the next sentence.
   c. STEP 3 below — the adversarial verification gate. Still mandatory, still before

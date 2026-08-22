@@ -467,6 +467,31 @@ everything. Design intent: banknote-engraved numeral + departure-board strip; th
 colorchannelmixer recipe or the overlay progress bar — direct hex colors render purple
 and drawbox width expressions freeze (details in the script headers).
 
+### Titles: what the audit found
+
+Fifteen published titles, measured:
+
+- **5 of 15** use the same construction — *"...what the forensics actually say"*, *"...what
+  Maybank's terms actually say"*, *"...what the filing actually says"*, *"...what the card's
+  own terms say"*. It is a good move. It is not a good *only* move.
+- **7 of 15** are the colon form, *"X: y"*.
+- **4 run past 73 characters**, which truncates in YouTube search and on mobile. The
+  longest was 84.
+
+**Rules:**
+
+1. **Under 60 characters** wherever the argument survives it. That is what shows before
+   truncation on the surfaces where people actually browse. 70 is a hard ceiling.
+2. **Front-load the distinctive words.** If it truncates, the half that survives must
+   still say what the video is. *"GitHub's commits doubled in 4 months"* survives;
+   *"The July 2026 OpenAI-Hugging Face agent intrusion:"* spends 50 characters before
+   reaching a verb.
+3. **Rotate the construction.** A specific number (*"The Dow's 704 points"*), a flat
+   contradiction (*"GXS's 10% cashback that is 4%"*), a plain question - not "what X
+   actually says" four times a fortnight.
+4. **The title and the thumbnail are different jobs.** The title is searched and read;
+   the thumbnail is glanced at. Never put the same words in both.
+
 ## 6b. Thumbnail (mandatory)
 
 ```bash
