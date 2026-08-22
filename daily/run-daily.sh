@@ -407,7 +407,11 @@ Also: YouTube caps descriptions at 5000 characters and chapter timestamps are ad
 Budget for them. If over cap, trim opening prose — never the reported-vs-confirmed
 disclosures or the primary-source list.
 
-STEP 6 - LOG.
+STEP 6 - LOG. COPY the tally out of verification.md rather than recalling it, and make
+the ledger line, the description and verification.md agree exactly. One video published
+94 in the ledger against 89 in both its own record and its description — harmless there,
+since the audience saw the correct figure, but these numbers are the channel's evidence
+that the gate is real, so they have to be exact.
 Append one line to @@ROOT@@/DAILY-LOG.md in exactly this format:
 YYYY-MM-DD | <topic> | <youtu.be URL> | <runtime> | claims checked: N, corrected: N, cut: N
 
