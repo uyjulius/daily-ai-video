@@ -382,7 +382,7 @@ Keep generated backdrops abstract. The YouTube altered-content answer turns on w
 Public-domain photographs are not altered content and do not trigger it; a synthetic
 voice reading your own script does not either.
 
-**Background music (default ON):** generate a rights-free ambient bed once per project —
+**Background music (default ON):** generate a rights-free **rhythmic** bed once per project —
 `$TTS_PY $SKILL_DIR/make_music.py <workspace>/music.wav <MINUTES> <slug>`
 
 **Pass both arguments.** `render_videos.py` loops the bed with `-stream_loop -1`, so a
@@ -391,6 +391,13 @@ on this channel monotonous through 21 Aug 2026. Generate to the video's actual r
 plus a minute (31 minutes costs ~17 s) and it never repeats. The slug seeds key, mode,
 chord progression and bell placement, so no two videos share a score; omit it and every
 video gets the same one.
+
+The bed is a beat — soft kick, low hats, rim tick, bass and plucked chords at 88-104
+BPM, built in 8-bar sections that add and drop layers. It is deliberately not ambient:
+this is an explainer channel. Everything is chosen to survive being ducked under a
+voice — no snare crack, no bright cymbals, no melodic hook that competes with the
+narration. If the pulse is too shy under narration, raise `music_gain_db` from the
+default -26 toward -22; do not compensate by making the bed itself busier.
 (name the interpreter explicitly: `$TTS_PY` is set inside build_audiobook.sh and never
 exported, and make_music.py is not executable, so a bare `$TTS_PY …` fails with
 permission denied) — and set `"music": "music.wav"`
@@ -416,6 +423,35 @@ everything. Design intent: banknote-engraved numeral + departure-board strip; th
 colorchannelmixer recipe or the overlay progress bar — direct hex colors render purple
 and drawbox width expressions freeze (details in the script headers).
 
+## 6b. Thumbnail (mandatory)
+
+```bash
+python3 $SKILL_DIR/gen_thumbnail.py <workspace> "Three to six words"
+```
+
+Then pass it to the upload: `--thumbnail <workspace>/thumbnail.png`.
+
+**Without this YouTube picks its own frame** — always a chapter slate, whose largest
+text is set for a 1920px canvas and is unreadable at the 168px a phone actually shows.
+An unreadable thumbnail loses the click before anyone hears a word. Audited 22 Aug 2026:
+none of the first fifteen videos had one.
+
+Rules for the text, in order of how much they matter:
+
+1. **Short.** Tested at true feed size: 33 characters reads instantly, 54 is legible but
+   work. Three to six words. A number and a noun beats a sentence.
+2. **Not the title.** The title explains; the thumbnail has to land in a quarter of a
+   second. "Commits doubled. Nobody says why." not "GitHub's commits doubled in 4
+   months; its outage report stopped saying why".
+3. **State the tension, not the topic.** The gap, the contradiction, the number that
+   does not add up.
+4. Wrap one phrase in `_underscores_` to set it in the accent colour, if one phrase
+   carries the point.
+
+The generator takes the accent and numeral from the opening chapter, so the thumbnail
+and the video match. Setting a thumbnail requires a phone-verified channel; if it is
+not, the upload still succeeds and prints a notice.
+
 ## 7. YouTube upload
 
 **Path A — API (preferred when available).** If `~/.config/topic-to-youtube/token.json`
@@ -423,7 +459,8 @@ exists, upload with:
 
 ```bash
 ~/.venv-ytapi/bin/python $SKILL_DIR/yt_upload.py <video.mp4> --title "..." \
-  --description-file d.txt --tags "..." --privacy public
+  --description-file d.txt --tags "..." --privacy public \
+  --thumbnail <workspace>/thumbnail.png
 ```
 
 Add `--playlist "<series title>"` under `--split` only, to collect the chapter uploads.

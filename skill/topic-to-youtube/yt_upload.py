@@ -67,6 +67,7 @@ def main():
     ap.add_argument("--privacy", default="public")
     ap.add_argument("--category", default="27")
     ap.add_argument("--check-lock", action="store_true")
+    ap.add_argument("--thumbnail", help="PNG/JPG to set as the custom thumbnail")
     a = ap.parse_args()
 
     yt = service()
@@ -104,6 +105,18 @@ def main():
                 print(f"  {pct}%", flush=True)
     vid = resp["id"]
     print(f"uploaded: https://youtu.be/{vid}", flush=True)
+
+    # Custom thumbnail. Without one YouTube picks a frame, which for this format is a
+    # chapter slate whose text is unreadable at feed size. Never fatal: the video is
+    # already public by this point, so a thumbnail failure must not fail the upload.
+    if a.thumbnail and os.path.exists(a.thumbnail):
+        try:
+            yt.thumbnails().set(videoId=vid, media_body=MediaFileUpload(a.thumbnail)).execute()
+            print("thumbnail set", flush=True)
+        except HttpError as e:
+            # Unverified accounts cannot set thumbnails; say so rather than dying.
+            print(f"thumbnail NOT set ({e.resp.status}) — the channel may need phone "
+                  f"verification at youtube.com/verify", flush=True)
 
     if a.playlist:
         pid = ensure_playlist(yt, a.playlist)

@@ -325,11 +325,14 @@ Do it in exactly this order, and do not reorder it to match the skill's narrativ
      anything is published. Do not weaken it to save time; it is the reason this
      channel is trustworthy.
   d. description.txt — good enough to publish, not polished to death.
-  e. Audio, slates, render. Audio runs in parallel across chapters via $TTS_JOBS;
+  e. A thumbnail — gen_thumbnail.py with a THREE-TO-SIX-WORD phrase, not the title —
+     and pass it to the upload with --thumbnail. Without it YouTube picks an
+     unreadable frame.
+  f. Audio, slates, render. Audio runs in parallel across chapters via $TTS_JOBS;
      just call build_audiobook.sh normally and it handles that itself.
-  f. Upload PUBLIC and verify with oEmbed (STEP 4).
-  g. Purge (STEP 5) and log (STEP 6).
-  h. ONLY NOW, if turns remain, write writeup.md. If you run out of turns here, that is
+  g. Upload PUBLIC and verify with oEmbed (STEP 4).
+  h. Purge (STEP 5) and log (STEP 6).
+  i. ONLY NOW, if turns remain, write writeup.md. If you run out of turns here, that is
      a perfectly acceptable outcome — the video is already live and logged. Say so in
      your report rather than treating it as a failure.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a rights-free ambient score for narration.
+"""Generate a rights-free UPBEAT music bed for narration.
 
 Usage: <tts venv python> make_music.py <out.wav> [minutes] [seed|slug]
 
@@ -7,28 +7,21 @@ PASS THE VIDEO'S ACTUAL RUNTIME. render_videos.py loops this file with
 `-stream_loop -1`, so a 3-minute bed under a 30-minute video is heard ten times.
 Generating to length costs a few seconds and removes the repetition entirely.
 
-Designed to sit UNDER a voice at about -26 dB: present, but never competing.
+DESIGN (22 Aug 2026). This replaced an ambient pad score, which was correct,
+inoffensive and dull. This version is rhythmic — kick, hats, bass and plucked chords
+at 88-104 BPM — because the channel is an explainer, not a memorial.
 
-WHAT CHANGED (22 Aug 2026) AND WHY
-The previous version looped four 16-second chords — a 64-second cycle repeated ~28
-times across a half-hour video — with a hardcoded seed, so every video on the channel
-carried the identical bed. It was correct and inoffensive and extremely dull.
+Two constraints shape every choice:
 
-Four things fix that, in rough order of how much they matter:
+  1. IT PLAYS UNDER A VOICE at about -26 dB, with sidechain ducking on top. So:
+     no snare crack, no bright cymbals, no melodic hook that competes with the
+     narration. The drums are felt more than heard — a soft kick, closed hats well
+     down, and a rim tick rather than a backbeat.
+  2. IT RUNS FOR HALF AN HOUR. So it is built in 8-bar sections that add and drop
+     layers, with fills at section boundaries, rather than a loop repeated 200 times.
 
-  1. NOTHING REPEATS ON A SHORT CYCLE. Chord lengths are irregular (11-23 s) and the
-     progression is 8-10 chords, so the harmonic cycle is 2-3 minutes rather than 64
-     seconds, and the layers above it never line up the same way twice.
-  2. SPARSE BELLS. Occasional single notes high above the pad, struck on no fixed
-     grid, with long decays. This is what gives the ear something to follow without
-     giving it something to listen TO.
-  3. SLOW TIMBRAL MOVEMENT. A one-pole lowpass whose cutoff drifts over minutes, so
-     the pad opens and closes rather than sitting still.
-  4. SEEDED PER VIDEO. Pass the slug; key, mode, progression and bell placement all
-     derive from it. Two videos never sound the same.
-
-Plus a dynamic arc: density and level rise and fall over the piece instead of running
-flat for thirty minutes.
+Key, mode, tempo, drum pattern and progression all seed from the slug, so no two
+videos share a score.
 
 Needs numpy + soundfile (both present in the Kokoro TTS venv).
 """
@@ -40,168 +33,183 @@ import soundfile as sf
 
 SR = 24_000
 
-# Modes as semitone offsets. Each carries a different colour; aeolian is the safe
-# documentary default, dorian lifts slightly, phrygian darkens.
 MODES = {
-    "aeolian":  [0, 2, 3, 5, 7, 8, 10],
-    "dorian":   [0, 2, 3, 5, 7, 9, 10],
-    "phrygian": [0, 1, 3, 5, 7, 8, 10],
+    "aeolian":    [0, 2, 3, 5, 7, 8, 10],
+    "dorian":     [0, 2, 3, 5, 7, 9, 10],
     "minor_pent": [0, 3, 5, 7, 10],
+    "mixolydian": [0, 2, 4, 5, 7, 9, 10],
 }
 
 
 def seed_from(arg):
-    """Accept an int seed or any string (a slug); both give a stable integer."""
     try:
         return int(arg)
     except (TypeError, ValueError):
         return int(hashlib.sha256(str(arg).encode()).hexdigest()[:8], 16)
 
 
-def one_pole_lp(x, cutoff_hz):
-    """One-pole lowpass with a per-sample (array) cutoff, so it can sweep.
-
-    Written as an explicit loop over blocks: a true per-sample IIR in numpy would be
-    a Python loop over 40M samples. Blocks of 2048 keep the sweep smooth to the ear
-    while staying fast.
-    """
-    out = np.empty_like(x)
-    y = 0.0
-    n = len(x)
-    block = 2048
-    for i in range(0, n, block):
-        j = min(i + block, n)
-        fc = float(np.mean(cutoff_hz[i:j])) if isinstance(cutoff_hz, np.ndarray) else float(cutoff_hz)
-        a = np.exp(-2 * np.pi * max(20.0, fc) / SR)
-        seg = x[i:j]
-        # vectorised one-pole over the block, carrying y across blocks
-        b = 1 - a
-        acc = np.empty_like(seg)
-        for k in range(len(seg)):
-            y = a * y + b * seg[k]
-            acc[k] = y
-        out[i:j] = acc
-    return out
+def f_of(midi):
+    return 440.0 * 2 ** ((midi - 69) / 12)
 
 
-def pad_voice(freq, dur, rng, detune=0.12):
-    """One sustained voice: fundamental plus soft harmonics, gently detuned."""
+# --------------------------------------------------------------------- drum voices
+def kick(dur=0.32, f0=110.0, f1=44.0):
+    """Soft round kick: a fast pitch sweep, no click. Felt, not heard."""
     t = np.linspace(0, dur, int(SR * dur), endpoint=False)
-    out = np.zeros_like(t)
-    for f in (freq, freq * (1 + detune / 100)):
-        for h, ha in ((1, 1.0), (2, 0.32), (3, 0.11), (4, 0.045), (6, 0.02)):
-            out += ha * np.sin(2 * np.pi * f * h * t + rng.random() * 6.28)
-    # bloom in, fall away — long enough that chords overlap rather than step
-    env = np.minimum(1, t / (dur * 0.38)) * np.minimum(1, (dur - t) / (dur * 0.45))
-    return out * env
+    f = f1 + (f0 - f1) * np.exp(-t * 26)
+    env = np.exp(-t * 11)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * env
 
 
-def bell(freq, dur, rng):
-    """A struck note with inharmonic partials and a long exponential decay."""
+def hat(dur=0.055, bright=7000.0):
+    """Closed hat: short filtered noise. Kept dull so it never sizzles."""
     t = np.linspace(0, dur, int(SR * dur), endpoint=False)
-    out = np.zeros_like(t)
-    for h, ha, dcy in ((1, 1.0, 1.0), (2.76, 0.28, 1.9), (5.4, 0.11, 2.8), (8.9, 0.04, 3.6)):
-        out += ha * np.sin(2 * np.pi * freq * h * t + rng.random() * 6.28) * np.exp(-dcy * t / (dur * 0.42))
-    out *= np.minimum(1, t / 0.004)          # tiny attack so it does not click
-    return out
+    n = np.random.default_rng(int(bright)).standard_normal(len(t))
+    n = n - np.convolve(n, np.ones(9) / 9, mode="same")      # crude highpass
+    return n * np.exp(-t * 95)
+
+
+def rim(dur=0.09):
+    """Rim tick instead of a snare — presence on the backbeat without a crack."""
+    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    tone = np.sin(2 * np.pi * 340 * t) * np.exp(-t * 60)
+    n = np.random.default_rng(3).standard_normal(len(t)) * np.exp(-t * 130)
+    return 0.7 * tone + 0.3 * n
+
+
+def pluck(freq, dur, rng):
+    """Karplus-Strong-ish plucked string: warm, decays fast, sits in the mids."""
+    n = int(SR * dur)
+    period = max(2, int(SR / freq))
+    buf = rng.standard_normal(period) * 0.5
+    buf -= buf.mean()
+    out = np.empty(n)
+    idx = 0
+    for i in range(n):
+        v = buf[idx]
+        nxt = buf[(idx + 1) % period]
+        buf[idx] = 0.497 * (v + nxt)          # slightly <0.5 so it decays
+        out[i] = v
+        idx = (idx + 1) % period
+    t = np.linspace(0, dur, n, endpoint=False)
+    return out * np.exp(-t * 3.1)
+
+
+def bass(freq, dur):
+    """Round sub-forward bass note."""
+    t = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    w = (np.sin(2 * np.pi * freq * t)
+         + 0.30 * np.sin(2 * np.pi * freq * 2 * t)
+         + 0.10 * np.sin(2 * np.pi * freq * 3 * t))
+    env = np.minimum(1, t / 0.012) * np.exp(-t * 2.3)
+    return w * env
+
+
+def add(buf, sig, at, gain=1.0):
+    i0 = int(at * SR)
+    i1 = min(len(buf), i0 + len(sig))
+    if i1 > i0:
+        buf[i0:i1] += sig[: i1 - i0] * gain
 
 
 def main(out_path, minutes=3.0, seed_arg=7):
-    seed = seed_from(seed_arg)
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(seed_from(seed_arg))
 
-    # --- identity: key and mode come from the seed, so each video differs ---------
-    root_midi = 50 + int(rng.integers(0, 7))          # D3-ish through A3-ish
+    bpm = float(rng.integers(88, 105))
+    beat = 60.0 / bpm
+    bar = beat * 4
+    root_midi = 33 + int(rng.integers(0, 8))            # A1..E2 region for bass
     mode_name = list(MODES)[int(rng.integers(0, len(MODES)))]
     mode = MODES[mode_name]
-    f_of = lambda m: 440.0 * 2 ** ((m - 69) / 12)
 
-    # --- progression: 8-10 chords, irregular lengths -----------------------------
-    n_chords = int(rng.integers(8, 11))
-    degrees = [0]
-    for _ in range(n_chords - 1):
-        # move by a mode degree, favouring stepwise-ish motion over random leaps
-        degrees.append(int(rng.choice([1, 2, 3, 4, 5, 6], p=[.22, .12, .22, .18, .16, .10])))
-    lengths = [float(rng.integers(11, 24)) for _ in degrees]
+    # 4-chord progression, repeated with variation; degrees within the mode
+    prog = [0] + [int(rng.choice([2, 3, 4, 5, 6])) for _ in range(3)]
 
-    total_s = max(60.0, minutes * 60.0)
-    pieces, bells_at, cursor = [], [], 0.0
-    while cursor < total_s:
-        # Mutate the progression on every pass. Without this a half-hour piece runs
-        # the same 8-10 chords eleven times; one substituted degree and a reshuffled
-        # length per cycle keeps it recognisable but never literally repeating.
-        if pieces:
-            i = int(rng.integers(1, len(degrees)))
-            degrees[i] = int(rng.choice([1, 2, 3, 4, 5, 6], p=[.22, .12, .22, .18, .16, .10]))
-            j = int(rng.integers(0, len(lengths)))
-            lengths[j] = float(rng.integers(11, 24))
-        for deg, ln in zip(degrees, lengths):
-            if cursor >= total_s:
-                break
-            base = root_midi + mode[deg % len(mode)] + 12 * (deg // len(mode))
-            # triad from the mode, voiced open
-            chord = [base, base + mode[(deg + 2) % len(mode)] - mode[deg % len(mode)] + 0,
-                     base + 7 + int(rng.integers(-1, 2))]
-            seg = np.zeros(int(SR * ln))
-            for i, m in enumerate(chord):
-                f = f_of(m - 12 if i == 0 else m)      # root an octave down
-                seg += pad_voice(f, ln, rng) * (0.9 if i == 0 else 0.45)
-            pieces.append(seg)
-            # schedule bells inside this chord — sparse, never on a grid
-            if rng.random() < 0.88:
-                for _ in range(int(rng.integers(1, 4))):
-                    at = cursor + float(rng.uniform(1.0, ln - 1.0))
-                    deg_b = int(rng.integers(0, len(mode)))
-                    oct_b = int(rng.choice([12, 24, 24, 36]))
-                    bells_at.append((at, root_midi + mode[deg_b] + oct_b))
-            cursor += ln
+    total_s = max(30.0, minutes * 60.0)
+    n = int(SR * total_s) + SR * 4
+    drums = np.zeros(n)
+    tonal = np.zeros(n)
 
-    mono = np.concatenate(pieces)[: int(SR * total_s)]
-    n = len(mono)
-    t = np.arange(n) / SR
+    # Kick placements within a bar, in beats. Two patterns, chosen per section.
+    kick_sets = [[0, 1.5, 2.5], [0, 2.5], [0, 1.5, 2, 3.5], [0, 2, 3.5]]
+    hat_div = float(rng.choice([0.5, 0.5, 0.25]))       # 8ths, sometimes 16ths
 
-    # --- slow filter movement: the pad opens and closes over minutes -------------
-    cutoff = 520 + 380 * np.sin(2 * np.pi * t / 190.0) + 160 * np.sin(2 * np.pi * t / 71.0)
-    mono = one_pole_lp(mono, cutoff)
-    mono /= (np.max(np.abs(mono)) or 1)
+    bars = int(total_s / bar) + 1
+    section = 0
+    for b in range(bars):
+        t0 = b * bar
+        if t0 > total_s:
+            break
+        # --- section logic: every 8 bars, change what is playing ----------------
+        if b % 8 == 0:
+            section += 1
+            kpat = kick_sets[int(rng.integers(0, len(kick_sets)))]
+            # density rises and falls so half an hour is not one texture
+            has_hat = (section % 4) != 1
+            has_rim = (section % 3) != 1
+            has_pluck = (section % 5) != 2
+            level = 0.75 + 0.25 * float(rng.random())
+        chord_deg = prog[(b // 2) % len(prog)]
+        base = root_midi + mode[chord_deg % len(mode)]
 
-    # --- bells: the layer that gives the ear something to follow ----------------
-    bell_bus = np.zeros(n)
-    for at, midi in bells_at:
-        i0 = int(at * SR)
-        dur = float(rng.uniform(3.5, 7.0))
-        b = bell(f_of(midi), dur, rng) * float(rng.uniform(0.07, 0.15))
-        i1 = min(n, i0 + len(b))
-        if i1 > i0:
-            bell_bus[i0:i1] += b[: i1 - i0]
+        # --- drums ---------------------------------------------------------------
+        for kb in kpat:
+            add(drums, kick(), t0 + kb * beat, 0.90 * level)
+        if has_hat:
+            steps = int(4 / hat_div)
+            for sidx in range(steps):
+                if rng.random() < 0.90:
+                    v = 0.16 if sidx % 2 == 0 else 0.10
+                    add(drums, hat(bright=6000 + 400 * (sidx % 5)), t0 + sidx * hat_div * beat, v * level)
+        if has_rim:
+            add(drums, rim(), t0 + 1 * beat, 0.30 * level)
+            add(drums, rim(), t0 + 3 * beat, 0.30 * level)
+        # fill on the last bar of a section
+        if b % 8 == 7:
+            for k in range(3):
+                add(drums, rim(), t0 + (3 + k * 0.25) * beat, 0.22 * level)
 
-    # --- sub swell: felt more than heard, keeps the floor from feeling empty -----
-    sub = 0.16 * np.sin(2 * np.pi * f_of(root_midi - 24) * t) * (0.5 + 0.5 * np.sin(2 * np.pi * t / 23.0))
+        # --- bass: root on 1, a syncopated answer ---------------------------------
+        add(tonal, bass(f_of(base), beat * 1.1), t0, 0.55 * level)
+        if rng.random() < 0.7:
+            add(tonal, bass(f_of(base), beat * 0.55), t0 + 2.5 * beat, 0.38 * level)
+        if rng.random() < 0.35:
+            add(tonal, bass(f_of(base + 7), beat * 0.5), t0 + 3.5 * beat, 0.30 * level)
 
-    # --- air ---------------------------------------------------------------------
-    noise = rng.standard_normal(n)
+        # --- plucked chord tones: the melodic interest, kept sparse ---------------
+        if has_pluck:
+            for off in (0, 2, 4):
+                if rng.random() < 0.55:
+                    m = base + 24 + mode[(chord_deg + off) % len(mode)] - mode[chord_deg % len(mode)]
+                    at = t0 + float(rng.choice([0, 1, 1.5, 2, 2.5, 3, 3.5])) * beat
+                    add(tonal, pluck(f_of(m), 0.9, rng), at, 0.20 * level)
+
+    drums = drums[: int(SR * total_s)]
+    tonal = tonal[: int(SR * total_s)]
+    t = np.arange(len(drums)) / SR
+
+    # gentle air so the gaps are not silent
+    air = rng.standard_normal(len(drums))
     for _ in range(3):
-        noise = np.convolve(noise, np.ones(420) / 420, mode="same")
-    noise /= (np.max(np.abs(noise)) or 1)
+        air = np.convolve(air, np.ones(300) / 300, mode="same")
+    air /= (np.max(np.abs(air)) or 1)
 
-    mix = mono + bell_bus + sub + 0.10 * noise
+    mix = 0.85 * drums + 1.0 * tonal + 0.05 * air
 
-    # --- dynamic arc: three long swells, so half an hour is not flat -------------
-    arc = 0.72 + 0.28 * (0.5 + 0.5 * np.sin(2 * np.pi * t / (total_s / 3.0) - np.pi / 2))
-    mix *= arc
+    # long arc so the whole piece breathes
+    mix *= 0.80 + 0.20 * np.sin(2 * np.pi * t / (total_s / 2.5) - np.pi / 2)
 
-    # --- fades and stereo --------------------------------------------------------
-    fade = int(SR * 4)
+    fade = int(SR * 3)
     mix[:fade] *= np.linspace(0, 1, fade)
     mix[-fade:] *= np.linspace(1, 0, fade)
-    d = int(SR * 0.017)
+
+    d = int(SR * 0.011)
     st = np.stack([mix, np.concatenate([mix[d:], mix[:d]])], axis=1)
     st /= (np.max(np.abs(st)) or 1)
-    st *= 0.7
-
+    st *= 0.72
     sf.write(out_path, st.astype(np.float32), SR)
-    print(f"wrote {out_path}  {n/SR/60:.1f} min  key={root_midi} mode={mode_name} "
-          f"chords={n_chords} bells={len(bells_at)}")
+    print(f"wrote {out_path}  {len(mix)/SR/60:.1f} min  {bpm:.0f} BPM  mode={mode_name} "
+          f"hats={'16th' if hat_div==0.25 else '8th'}")
 
 
 if __name__ == "__main__":
