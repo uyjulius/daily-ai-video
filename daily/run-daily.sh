@@ -334,7 +334,11 @@ Do it in exactly this order, and do not reorder it to match the skill's narrativ
   c. STEP 3 below — the adversarial verification gate. Still mandatory, still before
      anything is published. Do not weaken it to save time; it is the reason this
      channel is trustworthy.
-  d. description.txt — good enough to publish, not polished to death.
+  d. description.txt — good enough to publish, not polished to death. Two hard rules:
+     the FIRST 157 CHARACTERS are all most people see, so spend them on the hook and
+     never on corporate scaffolding; and it MUST carry a PRIMARY SOURCES block naming
+     every load-bearing figure's document, publisher and retrieval date. Audited: the
+     three markets videos carried 0, 1 and 1 sources against 6-12 everywhere else.
   e. A thumbnail — gen_thumbnail.py with a THREE-TO-SIX-WORD phrase, not the title —
      and pass it to the upload with --thumbnail. Without it YouTube picks an
      unreadable frame.

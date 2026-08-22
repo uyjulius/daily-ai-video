@@ -25,6 +25,14 @@ globally-focused narrative misses — those are the shapes worth 20 minutes.
   - Never state a projection, target or forecast as fact. Attribute every forecast to
     whoever made it, with its date.
 
+⚠️ LIST YOUR SOURCES IN THE DESCRIPTION. Audited 22 Aug 2026: every non-markets video
+listed 6-12 sources in its description; the three markets videos listed 0, 1 and 1. This
+is the beat where sourcing matters most — market figures rot fastest and are the easiest
+to get subtly wrong — and it was the only beat publishing nothing checkable. The
+description must carry a PRIMARY SOURCES block naming, for every figure used: the
+exchange or filing it came from, and the date and time it was read. A reader must be
+able to re-derive your numbers without watching the video.
+
 ⚠️ THIS IS NOT ADVICE, AND THE VIDEO MUST SAY SO. No price targets, no buy/sell/hold
 framing, no "this is undervalued", no portfolio suggestions. Explain what happened and
 what the competing readings are; let the viewer draw conclusions. The description must

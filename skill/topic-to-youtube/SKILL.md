@@ -467,6 +467,30 @@ everything. Design intent: banknote-engraved numeral + departure-board strip; th
 colorchannelmixer recipe or the overlay progress bar — direct hex colors render purple
 and drawbox width expressions freeze (details in the script headers).
 
+### The description is a trust artefact, not an afterthought
+
+Two rules, both from an audit of the published set.
+
+**The first 157 characters are all most people see.** That is what YouTube shows above
+the "…more" fold, in search results, and in the sidebar. Spend it on the hook, never on
+scaffolding. From the audit — the weakest opening in the set spent its entire visible
+portion on a corporate parenthetical:
+
+> On 17 August 2026, GXS Bank — a Singapore digital bank with a full MAS banking licence,
+> owned by a consortium of Grab Holdings and Singtel — launched the…
+
+…and the claim the video is actually about (a headline 10% that pays 4%) never appears
+above the fold at all. Compare the best:
+
+> On Thursday 20 August 2026 the Dow fell 703.84 points, -1.32%. The explanation that
+> travelled was one word: Walmart, down 9.15%. But Walmart was 1.27% of the…
+
+**Always carry a PRIMARY SOURCES block.** Non-markets videos averaged 6-12 cited
+sources; the three markets videos carried 0, 1 and 1 — the beat where figures rot
+fastest was the one publishing nothing checkable. The description is where a sceptical
+reader goes to re-derive your numbers. Name the document, the publisher, and the date
+you read it, for every load-bearing figure.
+
 ### Titles: what the audit found
 
 Fifteen published titles, measured:
