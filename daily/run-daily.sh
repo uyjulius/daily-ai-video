@@ -84,7 +84,7 @@ purge_assets() {
   local ws="$1"
   [ -d "$ws" ] || return 0
   rm -rf "$ws/videos" "$ws/wav" "$ws/mp3" "$ws/slates" \
-         "$ws/backgrounds" "$ws/music.wav" 2>/dev/null
+         "$ws/backgrounds" "$ws/music.wav" "$ws/thumbnail.html" 2>/dev/null
   echo "  purged assets: $ws"
 }
 
@@ -394,6 +394,7 @@ STEP 5 - PURGE. MANDATORY, ONLY AFTER A VERIFIED-PUBLIC UPLOAD.
 Confirm the video is genuinely public (oEmbed returns HTTP 200), then delete from the
 workspace: videos/ wav/ mp3/ slates/ backgrounds/ music.wav
 Keep only: writeup.md research/ narration/ verification.md project.json description.txt
+thumbnail.png  (delete thumbnail.html — it is scratch)
 Disk is the binding constraint on this whole arrangement. Do not skip this.
 
 STEP 5b - CONSISTENCY SWEEP BEFORE UPLOAD.
