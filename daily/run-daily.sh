@@ -323,8 +323,13 @@ Do it in exactly this order, and do not reorder it to match the skill's narrativ
   b. Write narration/ and project.json. THIS is the script the video uses.
      SPEAK TO SOMEONE. Measured: these scripts use you/your 2-7 times per 1000 words
      against 20-30 in ordinary speech, and some carry 1-4 questions in a whole half-hour.
-     It reads as a lecture to an empty room. Aim for 12-20 per 1000 and about two real
-     questions per chapter. Kokoro ignores punctuation, question marks and capitals
+     It reads as a lecture to an empty room. Count pronouns AND second-person
+     imperatives ("Hold that number next to this one" counts). Measured across the
+     published set the median is 7.4 per 1000, the best is 21.7 and the worst 3.7 - and
+     the loyalty videos score three to five times the markets and discourse ones, which
+     is habit rather than subject. TARGET: no video below 12 per 1000, plus about two
+     real questions per chapter - with question marks, not imperatives dressed as
+     questions. Kokoro ignores punctuation, question marks and capitals
      entirely - verified - so the ONLY emphasis you have is silence, via: paragraph break
      (0.55s), single line break (0.32s), em-dash (0.22s), and **marked span** (0.34s
      either side plus 10% slower, two or three per chapter at most). Recent scripts used

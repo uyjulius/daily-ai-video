@@ -165,9 +165,28 @@ device a writer reaches for dies in the model. So engagement has to be built int
 words and the pacing, both of which you control.
 
 **Address the listener.** Not constantly, and never matily — but a half-hour argument
-with no second person in it is a lecture delivered to furniture. Aim for 12-20 per
-thousand. *"Hold that number next to this one."* *"So ask yourself what would have to
-be true."* *"You have seen this before."*
+with no second person in it is a lecture delivered to furniture.
+
+Count both pronouns *and* second-person imperatives — *"Hold that number next to this
+one"* is direct address with the *you* implied, and a pronoun-only count misses it.
+Measured across the published set, per thousand words:
+
+| | Combined address per 1000 |
+|---|---|
+| `heymax-wyndham` | **21.7** |
+| `gxs-credit-card` | 17.1 |
+| `ocbc-tokens` | 12.4 |
+| median of all fifteen | 7.4 |
+| `openai-huggingface` | 4.6 |
+| `google-spirit` | **3.7** |
+
+**The loyalty videos already do this well and the discourse and markets ones do not** —
+because "what this costs you" invites a reader in and "what the filing says" does not.
+That is a habit, not a constraint of the subject. A market moving seven hundred points
+is something happening to somebody.
+
+**Target: no video below 12 per thousand.** The channel has already shipped 21.7, so it
+is plainly reachable.
 
 **Ask real questions.** A question the video then answers is the cheapest way to make
 someone lean in, and it costs nothing in rigour. Two per chapter is not too many. A
@@ -226,8 +245,10 @@ pause in the middle:
 >
 > That is the whole company — one and a quarter percent of the average.
 >
-> So ask yourself what would have to be true for that stock to move this index seven
-> hundred points.
+> So what would have to be true for that stock to move this index seven hundred points?
+>
+> You would need it to drag everything else down with it. Hold on to that, because it is
+> exactly what the next four minutes test.
 
 What changed, and why each one matters:
 
@@ -243,6 +264,14 @@ What changed, and why each one matters:
 
 Nothing was dropped and no claim was weakened. It is the same argument, spoken to
 someone.
+
+**Check your own draft against the numbers, because this example failed them first.**
+As originally written it closed *"So ask yourself what would have to be true…"* — which
+reads as engagement but is an imperative with no question mark, and scored **zero
+questions**. It also came in at 10 direct addresses per thousand against the 12-20
+target. Both were fixed by turning the close into a real question and adding a second
+person to the line after it. If a worked example can miss the targets, a draft written
+at speed certainly can.
 
 ### Pacing: every video so far gets heavier as it goes
 
