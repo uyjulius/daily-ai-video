@@ -24,6 +24,7 @@ does expose: where the silence goes, and the speed of each call.
 The em-dash rule alone recovers 288 emphasis moments already sitting in the existing
 scripts, which the previous version flattened into commas.
 """
+import hashlib
 import re
 import sys
 import warnings
@@ -37,21 +38,66 @@ warnings.filterwarnings("ignore")
 SR = 24_000
 ROOT = Path(__file__).resolve().parent.parent
 
-# CALIBRATION. Splitting one utterance into two Kokoro calls costs about 0.82 s on its
-# own — the model pads each call's onset and offset — so inserted silence sits ON TOP of
-# that. Measured: "wrong, badly wrong" is 2.65 s in one call and 3.48 s split with zero
-# inserted. The figures below are therefore the *extra* silence, chosen so the four
-# devices land as an audible ladder rather than four similar-sounding gaps:
+# CALIBRATION. Kokoro pads every call with ~0.23 s of lead and ~0.40 s of trail, so a
+# naive split costs ~0.63 s before any silence is inserted. The first version of this
+# ignored that, and the result was a bimodal rhythm — measured on a real passage: eight
+# gaps under 0.35 s, ONE between 0.35 and 0.9, and nine over 0.9. Every device had
+# collapsed into the same long bucket, which reads as metronomic rather than expressive.
 #
-#     em-dash          ~0.82 s total   the quick catch — the split alone carries it
-#     line break       ~1.07 s total   a beat inside an argument
-#     paragraph        ~1.37 s total   the argument moves on (unchanged from before)
-#     **emphasis**     ~1.16 s each side, and 10% slower through the span
-PAUSE_PARA = 0.55
-PAUSE_LINE = 0.25
-PAUSE_DASH = 0.00
-PAUSE_EMPH = 0.34
+# So each call is trimmed to a small residual and the silence below is inserted exactly.
+# That produces a real ladder across the range rather than three indistinguishable
+# long pauses:
+#
+#     em-dash          ~0.27 s   the quick catch
+#     **emphasis**     ~0.67 s each side, and 10% slower through the span
+#     line break       ~0.52 s   a beat inside an argument
+#     paragraph        ~0.92 s   the argument moves on
+#
+# MEASURED RESULT on a real passage, gaps bucketed tiny/beat/long:
+#     old published      10 / 5 / 2   a wall of speech with two stops in it
+#     untrimmed v1        8 / 1 / 9   bimodal: everything either micro or very long
+#     trimmed + jitter    7 / 7 / 3   an actual spread
+# Narration rate at realistic new-rules density measures 173 wpm, against 186 for
+# device-free text — so WPM in config.sh is set for scripts that use the devices.
+TRIM_KEEP = 0.06           # residual silence left on each call so nothing sounds clipped
+PAUSE_PARA = 0.80
+PAUSE_LINE = 0.40
+PAUSE_DASH = 0.15
+PAUSE_EMPH = 0.55
 EMPH_SPEED = 0.90          # a touch slower; the ear reads it as weight
+JITTER = 0.28              # +/- proportion; see _jitter()
+
+
+def _jitter(seconds: float, key: str) -> float:
+    """Vary a pause by up to +/-JITTER, deterministically from the text around it.
+
+    Uniform pauses are the last thing that reads as machine. Measured on a real
+    passage: after trimming, every paragraph break landed at exactly 0.94 s, six times
+    in a row. A person never does that. The variation is keyed off the text rather than
+    random so the same script always renders identically — resumable, reproducible.
+    """
+    if seconds <= 0:
+        return seconds
+    h = int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+    return seconds * (1.0 + JITTER * (2.0 * h - 1.0))
+
+
+def _trim(a: np.ndarray, keep: float = TRIM_KEEP) -> np.ndarray:
+    """Strip Kokoro's onset/offset padding, leaving `keep` seconds either side.
+
+    Without this the model's own ~0.63 s of padding per call dominates every gap and
+    all four pacing devices sound the same. Trimming makes the inserted silence the
+    controlling term.
+    """
+    if a.size == 0:
+        return a
+    env = np.abs(a)
+    thr = env.max() * 0.02
+    nz = np.nonzero(env > thr)[0]
+    if not len(nz):
+        return a
+    k = int(SR * keep)
+    return a[max(0, nz[0] - k): min(len(a), nz[-1] + k)]
 
 
 def normalise(text: str) -> str:
@@ -142,9 +188,9 @@ def render(src: Path, dst: Path, voice: str, speed: float) -> float:
     for chunk, gap, mult in segments(text):
         if chunk:
             for _, _, audio in pipeline(chunk, voice=voice, speed=speed * mult):
-                out.append(np.asarray(audio, dtype=np.float32))
+                out.append(_trim(np.asarray(audio, dtype=np.float32)))
         if gap > 0:
-            out.append(np.zeros(int(SR * gap), dtype=np.float32))
+            out.append(np.zeros(int(SR * _jitter(gap, chunk or str(len(out)))), dtype=np.float32))
     audio = np.concatenate(out) if out else np.zeros(1, dtype=np.float32)
     dst.parent.mkdir(parents=True, exist_ok=True)
     sf.write(str(dst), audio, SR)
