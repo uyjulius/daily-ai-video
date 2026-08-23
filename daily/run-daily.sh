@@ -28,6 +28,7 @@ LEDGER="$ROOT/DAILY-LOG.md"
 ATTENTION="$ROOT/NEEDS-ATTENTION.md"
 STATUS_FILE="$DAILY/status.json"
 TOPICS="$ROOT/TOPICS.md"
+EXCLUDE="$ROOT/EXCLUDE.md"
 BEATS_DIR="$ROOT/beats"
 CONFIG="$DAILY/config.sh"
 
@@ -115,6 +116,13 @@ beat_body() {     # $1 = beat file — everything after the first `---`
 next_topic() {
   [ -f "$TOPICS" ] || return 1
   sed -n 's/^- \[ \] *//p' "$TOPICS" | grep -v '^[[:space:]]*$' | head -1
+}
+
+# Subjects the operator never wants covered. Free text, read by the model rather than
+# matched, so "anything about crypto prices" behaves the way it reads.
+exclusions() {
+  [ -f "$EXCLUDE" ] || return 0
+  sed -n 's/^- *//p' "$EXCLUDE" | grep -v '^[[:space:]]*$'
 }
 
 # Mark a queued topic done, in place, with the date and URL for the record.
@@ -582,12 +590,27 @@ unless you can find a genuine argument underneath. Pick exactly one topic."
 
   # Also tell it what is already published today, so a second video in one night does
   # not land on the same story as the first.
-  if [ "$BASE" -gt 0 ]; then
-    ALREADY="$(grep "^$TODAY.*youtu.be/" "$LEDGER" 2>/dev/null | sed 's/|[^|]*$//' | sed 's/^/    /')"
+  # Recent coverage, not just today's. With three videos a night across three beats,
+  # a today-only check lets the same story come back next week; over a fortnight it
+  # would come back repeatedly.
+  RECENT="$(grep "youtu.be/" "$LEDGER" 2>/dev/null | tail -40 \
+            | sed 's/|[^|]*$//' | sed 's/^/    /')"
+  if [ -n "$RECENT" ]; then
     TOPIC_DIRECTIVE="$TOPIC_DIRECTIVE
 
-ALREADY PUBLISHED TODAY — pick something clearly distinct from these:
-$ALREADY"
+ALREADY PUBLISHED RECENTLY — pick something clearly distinct from every one of these,
+and do not re-run an old angle on the same story:
+$RECENT"
+  fi
+
+  EXCL="$(exclusions | sed 's/^/    - /')"
+  if [ -n "$EXCL" ]; then
+    TOPIC_DIRECTIVE="$TOPIC_DIRECTIVE
+
+DO NOT COVER ANY OF THE FOLLOWING. These are standing exclusions set by the operator.
+If the best story of the day falls under one of them, pick the next best instead — do
+not cover it from a different angle to get around the rule:
+$EXCL"
   fi
 
   THIS_PROMPT="${PROMPT/@@TOPIC_DIRECTIVE@@/$TOPIC_DIRECTIVE}"

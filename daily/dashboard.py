@@ -39,6 +39,7 @@ CONFIG = os.path.join(DAILY, "config.sh")
 STATUS = os.path.join(DAILY, "status.json")
 LEDGER = os.path.join(ROOT, "DAILY-LOG.md")
 TOPICS = os.path.join(ROOT, "TOPICS.md")
+EXCLUDE = os.path.join(ROOT, "EXCLUDE.md")
 BEATS = os.path.join(ROOT, "beats")
 ATTENTION = os.path.join(ROOT, "NEEDS-ATTENTION.md")
 AUTH_STATE = os.path.join(DAILY, "auth.json")
@@ -177,6 +178,18 @@ def read_topics():
     return pend, done[-8:]
 
 
+def read_exclusions():
+    out = []
+    try:
+        for l in open(EXCLUDE):
+            l = l.strip()
+            if l.startswith("- ") and l[2:].strip():
+                out.append(l[2:].strip())
+    except OSError:
+        pass
+    return out
+
+
 def read_beats():
     out = []
     try:
@@ -311,6 +324,7 @@ def state():
         "voices": [{"id": v, "name": n, "note": d, "measured": v in VOICE_WPM} for v, n, d in VOICES],
         "beats": read_beats(),
         "topics": pend, "topics_done": done,
+        "exclusions": read_exclusions(),
         "ledger": read_ledger(),
         "health": health(),
         "attention": open(ATTENTION).read() if os.path.exists(ATTENTION) else "",
@@ -394,6 +408,21 @@ class Handler(BaseHTTPRequestHandler):
             lines = open(TOPICS).read().splitlines()
             out = [l for l in lines if not (l.strip().startswith("- [ ]") and l.strip()[5:].strip() == t)]
             open(TOPICS, "w").write("\n".join(out) + "\n")
+            return {"ok": True}
+        if path == "/api/exclude/add":
+            t = (d.get("text") or "").strip()
+            if not t:
+                raise ValueError("Type a subject first.")
+            if not os.path.exists(EXCLUDE):
+                open(EXCLUDE, "w").write("# Do not cover these\n\n## Rules\n\n")
+            with open(EXCLUDE, "a") as f:
+                f.write(f"- {t}\n")
+            return {"ok": True}
+        if path == "/api/exclude/remove":
+            t = (d.get("text") or "").strip()
+            lines = open(EXCLUDE).read().splitlines()
+            out = [l for l in lines if not (l.strip().startswith("- ") and l.strip()[2:].strip() == t)]
+            open(EXCLUDE, "w").write("\n".join(out) + "\n")
             return {"ok": True}
         if path == "/api/config":
             key, val = d.get("key"), d.get("value")

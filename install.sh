@@ -96,6 +96,7 @@ else
 fi
 
 [ -f "$ROOT/DAILY-LOG.md" ] || printf '# Daily video ledger\n\nOne line per published video.\n\n' > "$ROOT/DAILY-LOG.md"
+[ -f "$ROOT/EXCLUDE.md" ]   || printf '# Do not cover these\n\nOne rule per line, written the way you would say it.\n\n## Rules\n\n' > "$ROOT/EXCLUDE.md"
 [ -f "$ROOT/TOPICS.md" ]    || printf '# Topic queue\n\nOne per line as `- [ ] your topic`.\nQueued topics take priority over the standing beats.\n\n## Queue\n\n' > "$ROOT/TOPICS.md"
 ok "ledger + topic queue"
 

@@ -180,6 +180,20 @@ dialog::backdrop{background:rgba(8,9,12,.82)}
   </section>
 
   <section>
+    <div class="shead"><h3>What it will never cover</h3></div>
+    <p class="hint">Subjects it should skip, however good the story looks. Write them the
+      way you would say them — "anything about crypto prices" reads better than "crypto".</p>
+    <div class="card">
+      <label for="excl">Add a subject to avoid</label>
+      <div style="display:flex;gap:11px">
+        <input type="text" id="excl" placeholder="e.g. anything about crypto or token prices">
+        <button class="btn ghost" id="addExcl">Never cover</button>
+      </div>
+    </div>
+    <div id="exclusions"></div>
+  </section>
+
+  <section>
     <div class="shead"><h3>What it covers</h3></div>
     <p class="hint">Subjects it works through every night, in order. Each one carries its own
       sources and its own rules about what counts as proof.</p>
@@ -311,6 +325,14 @@ function renderTopics(){
   document.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>act("/api/topic/remove",{text:b.dataset.rm},"Removed"));
 }
 
+function renderExclusions(){
+  const x=S.exclusions||[];
+  $("#exclusions").innerHTML = x.length
+    ? `<div>${x.map(t=>`<span class="pill">✗ ${esc(t)}<button data-ux="${esc(t)}" aria-label="Allow again">×</button></span>`).join("")}</div>`
+    : `<p class="empty">Nothing excluded. It will consider any story that fits a subject below.</p>`;
+  document.querySelectorAll("[data-ux]").forEach(b=>b.onclick=()=>act("/api/exclude/remove",{text:b.dataset.ux},"Allowed again"));
+}
+
 function renderBeats(){
   $("#beats").innerHTML=S.beats.map(b=>`<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
@@ -359,13 +381,16 @@ async function load(){
   S=await api("/api/state");
   $("#rail").innerHTML=`${S.running?"Working":S.failed?"Needs attention":"Idle"} · <b>${S.ledger.length}</b> published · saves to <b>${esc(S.root.replace(/^.*\//,""))}</b>`;
   $("#sched").setAttribute("aria-pressed",String(!!S.schedule_on));
-  renderStatus();renderSetup();renderLedger();renderTopics();renderBeats();renderSettings();
+  renderStatus();renderSetup();renderLedger();renderTopics();renderExclusions();renderBeats();renderSettings();
 }
 
 $("#sched").onclick=()=>act("/api/schedule",{on:$("#sched").getAttribute("aria-pressed")!=="true"},"Schedule updated");
 $("#addTopic").onclick=()=>{const i=$("#topic");if(!i.value.trim())return toast("Type a topic first");
   act("/api/topic/add",{text:i.value.trim()},"Added to the queue").then(()=>i.value="");};
 $("#topic").addEventListener("keydown",e=>{if(e.key==="Enter")$("#addTopic").click()});
+$("#addExcl").onclick=()=>{const i=$("#excl");if(!i.value.trim())return toast("Type a subject first");
+  act("/api/exclude/add",{text:i.value.trim()},"Added — it will skip this").then(()=>i.value="");};
+$("#excl").addEventListener("keydown",e=>{if(e.key==="Enter")$("#addExcl").click()});
 $("#runNow").onclick=()=>act("/api/run",{},"Started — it will take about an hour");
 $("#showLog").onclick=async()=>{const r=await api("/api/log");
   $("#dlgTitle").textContent="Last night's log";$("#dlgBody").innerHTML=`<pre>${esc(r.text)}</pre>`;$("#dlg").showModal();};

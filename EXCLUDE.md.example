@@ -1,0 +1,12 @@
+# Don't cover these
+
+One rule per line. The nightly run is given this list and told to pick something else.
+
+Write them the way you'd say them out loud. They are read by a language model, not
+matched as keywords, so "anything about crypto prices" works better than "crypto".
+
+Lines starting with # are comments. Delete a line to allow the subject again.
+
+## Rules
+
+- anything about crypto or token prices

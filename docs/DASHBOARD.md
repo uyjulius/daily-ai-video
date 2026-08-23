@@ -38,6 +38,11 @@ opens the full record: every claim, the source checked, and what was decided.
 **Up next.** Type a topic and press Add. Anything you queue is made before the standing
 subjects. A ▸ marks the ones going out tonight.
 
+**What it will never cover.** Subjects to skip however good the story looks. Write them
+the way you would say them — *"anything about crypto prices"* reads better than
+*"crypto"*, because a language model reads this, not a keyword matcher. The × on a pill
+allows the subject again.
+
 **What it covers.** The subjects it works through every night. **Edit** to change what a
 subject means, where it looks, and how long the video should be.
 
