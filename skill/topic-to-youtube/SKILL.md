@@ -202,10 +202,12 @@ things into real silence:
 | em-dash | 0.22 s | the aside, the correction, the turn |
 | `**marked span**` | 0.34 s either side, and 10% slower | the number or phrase the chapter turns on |
 
-Two warnings from the audit. Recent scripts contain **zero em-dashes** — a device that
-used to appear 288 times across the set has simply been dropped, and with it every
-aside and turn. And paragraphs average 41 words, so the voice gets a real beat only
-about **every 13 seconds**; that unbroken wall is most of what makes it feel robotic.
+Two warnings from the audit. Em-dash use **swings from 0 to 44 per video** with no
+pattern — `google-spirit` has 44 and `agents-md` has none — so the device is not dead,
+it is unreliable. Every script should carry them; they are the aside and the turn. And
+paragraphs average 41 words across the set, ranging 32 to 48, so the voice gets a real
+beat only about **every 13 seconds**; that unbroken wall is most of what makes it feel
+robotic. Getting the mean under 30 is the single biggest change asked for here.
 Break more often than feels necessary on the page. It is being *heard*, not read.
 
 Use `**emphasis**` sparingly — two or three per chapter. It is the loudest tool here and

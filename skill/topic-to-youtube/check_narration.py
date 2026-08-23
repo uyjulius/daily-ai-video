@@ -55,6 +55,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("workspace")
     ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--tsv", action="store_true",
+                    help="one machine-readable line, for sweeping many workspaces")
     a = ap.parse_args()
     ch = analyse(a.workspace)
     tw = sum(c["words"] for c in ch)
@@ -83,6 +85,13 @@ def main():
         ("second half not heavier (<= +5%)", f"{taper:+.0f}%", taper <= 5,
          "all 13 published videos back-loaded, +7% to +46%"),
     ]
+    if a.tsv:
+        n_pass = sum(1 for r in rows if r[2])
+        print("\t".join([os.path.basename(os.path.abspath(a.workspace)),
+                         f"{rate:.1f}", f"{qs}/{len(ch)}", f"{mean_para:.0f}",
+                         str(dashes), str(emph), f"{taper:+.0f}%", f"{n_pass}/6"]))
+        sys.exit(1 if (n_pass < 6 and a.strict) else 0)
+
     width = max(len(r[0]) for r in rows)
     print(f"\n  narration check — {len(ch)} chapters, {tw} words\n")
     misses = 0
