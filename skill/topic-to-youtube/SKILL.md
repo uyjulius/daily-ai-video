@@ -192,6 +192,58 @@ Break more often than feels necessary on the page. It is being *heard*, not read
 Use `**emphasis**` sparingly — two or three per chapter. It is the loudest tool here and
 it stops meaning anything if every paragraph has one.
 
+### A worked example, because the rules keep getting ignored
+
+The em-dash was in the house style and recent scripts contain **zero** of them. Rules
+alone do not survive. This is the target, written out — copy the *shape*, not the words.
+
+**Before** — correct, evidenced, and talking to nobody. Two paragraphs, 71 words, one
+pause in the middle:
+
+> On Thursday the twentieth of August, twenty twenty-six, the Dow Jones Industrial
+> Average closed at fifty-two thousand, seven hundred and fifty-nine point two one. It
+> had fallen seven hundred and three point eight four points. One point three two
+> percent. Its worst session since the twenty-ninth of July.
+>
+> By that evening the explanation was everywhere, and it was one word long. Walmart. The
+> company had reported before the bell and its shares had fallen nine point one five
+> percent. Here is the problem with that explanation. Walmart is one point two seven
+> percent of the index.
+
+**After** — same facts, same rigour, nothing softened:
+
+> On Thursday the twentieth of August, the Dow fell seven hundred and three points.
+>
+> By that evening the explanation was everywhere. It was one word long.
+>
+> Walmart.
+>
+> The company had reported before the bell, and its shares fell nine point one five
+> percent. So far, so reasonable.
+>
+> Now hold that number next to this one.
+> Walmart is **one point two seven percent** of the index.
+>
+> That is the whole company — one and a quarter percent of the average.
+>
+> So ask yourself what would have to be true for that stock to move this index seven
+> hundred points.
+
+What changed, and why each one matters:
+
+- **A one-word paragraph.** "Walmart." earns a full beat on its own. The before version
+  buries it mid-sentence.
+- **Two direct addresses** where there were none — *hold that number*, *ask yourself*.
+- **A question at the end** that the next chapter answers, so there is a reason to stay.
+- **One `**emphasis**` span**, on the number the whole chapter turns on. Only one.
+- **An em-dash** doing the aside it was invented for.
+- **Nine paragraphs instead of two**, so the voice breathes roughly every eight seconds
+  rather than every thirty.
+- The date is still there. It is just no longer the first thing anyone hears.
+
+Nothing was dropped and no claim was weakened. It is the same argument, spoken to
+someone.
+
 ### Pacing: every video so far gets heavier as it goes
 
 Measured across thirteen videos: the second half runs **7% to 46% longer per chapter**

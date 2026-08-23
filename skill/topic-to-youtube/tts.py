@@ -66,6 +66,10 @@ PAUSE_DASH = 0.15
 PAUSE_EMPH = 0.55
 EMPH_SPEED = 0.90          # a touch slower; the ear reads it as weight
 JITTER = 0.28              # +/- proportion; see _jitter()
+RATE_DRIFT = 0.04          # +/- proportion; see _drift(). Verified pitch-safe:
+                           # Kokoro's speed parameter moves duration but not pitch
+                           # (121-124 Hz measured across speed 0.88 to 1.12), so this
+                           # varies delivery rate without any chipmunk artefact.
 
 
 def _jitter(seconds: float, key: str) -> float:
@@ -80,6 +84,17 @@ def _jitter(seconds: float, key: str) -> float:
         return seconds
     h = int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
     return seconds * (1.0 + JITTER * (2.0 * h - 1.0))
+
+
+def _drift(key: str) -> float:
+    """A small per-paragraph rate variation, deterministic from the text.
+
+    A speaker who holds exactly one rate for half an hour is the definition of
+    robotic; real delivery drifts, quickening through familiar ground and easing on
+    what matters. This is the cheap approximation of that.
+    """
+    h = int(hashlib.sha256(("r" + key).encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+    return 1.0 + RATE_DRIFT * (2.0 * h - 1.0)
 
 
 def _trim(a: np.ndarray, keep: float = TRIM_KEEP) -> np.ndarray:
@@ -136,6 +151,7 @@ def segments(text: str):
     """
     paras = [p.strip() for p in text.split("\n\n") if p.strip()]
     for pi, para in enumerate(paras):
+        drift = _drift(para[:60])
         lines = [l.strip() for l in para.split("\n") if l.strip()]
         for li, line in enumerate(lines):
             last_line = li == len(lines) - 1
@@ -162,9 +178,9 @@ def segments(text: str):
                         last_chunk = ci == len(chunks) - 1
                         if emph:
                             # air before an emphasised span, and after it
-                            yield "", PAUSE_EMPH if ci == 0 else 0.0, 1.0
+                            yield "", PAUSE_EMPH if ci == 0 else 0.0, drift
                             tail = PAUSE_EMPH if last_chunk else 0.10
-                            yield c, tail, EMPH_SPEED
+                            yield c, tail, EMPH_SPEED * drift
                             continue
                         if not last_chunk:
                             tail = 0.16
