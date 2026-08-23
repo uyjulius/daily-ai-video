@@ -37,9 +37,19 @@ warnings.filterwarnings("ignore")
 SR = 24_000
 ROOT = Path(__file__).resolve().parent.parent
 
+# CALIBRATION. Splitting one utterance into two Kokoro calls costs about 0.82 s on its
+# own — the model pads each call's onset and offset — so inserted silence sits ON TOP of
+# that. Measured: "wrong, badly wrong" is 2.65 s in one call and 3.48 s split with zero
+# inserted. The figures below are therefore the *extra* silence, chosen so the four
+# devices land as an audible ladder rather than four similar-sounding gaps:
+#
+#     em-dash          ~0.82 s total   the quick catch — the split alone carries it
+#     line break       ~1.07 s total   a beat inside an argument
+#     paragraph        ~1.37 s total   the argument moves on (unchanged from before)
+#     **emphasis**     ~1.16 s each side, and 10% slower through the span
 PAUSE_PARA = 0.55
-PAUSE_LINE = 0.32
-PAUSE_DASH = 0.22
+PAUSE_LINE = 0.25
+PAUSE_DASH = 0.00
 PAUSE_EMPH = 0.34
 EMPH_SPEED = 0.90          # a touch slower; the ear reads it as weight
 
