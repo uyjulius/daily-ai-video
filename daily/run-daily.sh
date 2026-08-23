@@ -345,6 +345,10 @@ Do it in exactly this order, and do not reorder it to match the skill's narrativ
      reuse the 'what X actually says' construction; 5 of the first 15 titles did.
      OPEN ON THE FACT, NOT THE DATE. Seven of twelve opened "On the Nth of August, X did
      Y". Lead with the number or the contradiction; date it in the next sentence.
+  b2. RUN THE CRAFT CHECK before any audio:
+        python3 $SKILL_DIR/check_narration.py <workspace>
+     Fix every MISS it reports, then run it again. Rendering first wastes an hour on a
+     script you already know is flat. The 23 Aug video failed all six checks.
   c. STEP 3 below — the adversarial verification gate. Still mandatory, still before
      anything is published. Do not weaken it to save time; it is the reason this
      channel is trustworthy.

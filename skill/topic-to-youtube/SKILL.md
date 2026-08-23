@@ -211,6 +211,27 @@ Break more often than feels necessary on the page. It is being *heard*, not read
 Use `**emphasis**` sparingly — two or three per chapter. It is the loudest tool here and
 it stops meaning anything if every paragraph has one.
 
+### Check the draft before you render it
+
+```bash
+python3 $SKILL_DIR/check_narration.py <workspace>
+```
+
+Run it after writing `narration/` and **before** building any audio, then fix what it
+flags. Rendering first means an hour of compute spent on a script you already know is
+flat.
+
+It measures the six things above against the published set and prints PASS/MISS with the
+evidence for each threshold, plus the two least engaging chapters by name. Run against
+the 23 Aug video it returned MISS on all six — 8.2 direct addresses per thousand, two
+questions across nine chapters, 43-word paragraphs, zero em-dashes, zero emphasis spans,
+and a second half 13% heavier than the first.
+
+This exists because instruction alone has not worked. The em-dash was house style and
+recent scripts contain none; the closing-chapter formula survived nine videos of being
+told not to use it. A number that says MISS is harder to drift past than a paragraph
+that says try harder.
+
 ### A worked example, because the rules keep getting ignored
 
 The em-dash was in the house style and recent scripts contain **zero** of them. Rules
