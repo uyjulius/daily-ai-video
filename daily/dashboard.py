@@ -325,6 +325,8 @@ def state():
         "beats": read_beats(),
         "topics": pend, "topics_done": done,
         "exclusions": read_exclusions(),
+        "beats_removed": sorted(f for f in os.listdir(os.path.join(BEATS, "removed"))
+                                if f.endswith(".md")) if os.path.isdir(os.path.join(BEATS, "removed")) else [],
         "ledger": read_ledger(),
         "health": health(),
         "attention": open(ATTENTION).read() if os.path.exists(ATTENTION) else "",
@@ -447,6 +449,26 @@ class Handler(BaseHTTPRequestHandler):
             if not 5 <= rt <= 120:
                 raise ValueError("Length must be between 5 and 120 minutes.")
             open(os.path.join(BEATS, f), "w").write(f"RUNTIME_MIN: {rt}\n---\n{body.strip()}\n")
+            return {"ok": True}
+        if path == "/api/beat/delete":
+            f = os.path.basename(d.get("file", ""))
+            if not f.endswith(".md"):
+                raise ValueError("Not a beat file.")
+            src = os.path.join(BEATS, f)
+            if not os.path.exists(src):
+                raise ValueError("That subject is already gone.")
+            # Move rather than unlink. A beat is hand-written and often long; a
+            # mis-click should not destroy it.
+            trash = os.path.join(BEATS, "removed")
+            os.makedirs(trash, exist_ok=True)
+            os.replace(src, os.path.join(trash, f))
+            return {"ok": True, "restore": os.path.join(trash, f)}
+        if path == "/api/beat/restore":
+            f = os.path.basename(d.get("file", ""))
+            src = os.path.join(BEATS, "removed", f)
+            if not os.path.exists(src):
+                raise ValueError("Nothing to restore.")
+            os.replace(src, os.path.join(BEATS, f))
             return {"ok": True}
         if path == "/api/run":
             st = read_status()

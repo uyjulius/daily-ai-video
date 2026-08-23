@@ -198,6 +198,7 @@ dialog::backdrop{background:rgba(8,9,12,.82)}
     <p class="hint">Subjects it works through every night, in order. Each one carries its own
       sources and its own rules about what counts as proof.</p>
     <div id="beats"></div>
+    <div id="beatsRemoved"></div>
   </section>
 
   <section>
@@ -338,9 +339,29 @@ function renderBeats(){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
       <div><h4>${esc(titleCase(b.name))}</h4>
       <div class="rail">${b.runtime} minute video</div></div>
-      <button class="btn ghost" data-b="${esc(b.file)}">Edit</button></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" data-b="${esc(b.file)}">Edit</button>
+        <button class="btn ghost" data-del="${esc(b.file)}">Remove</button>
+      </div></div>
     <p style="margin:11px 0 0;color:var(--paper-dim)">${esc(sentence(b.summary)||"No description yet.")}</p></div>`).join("")
     ||`<p class="empty">No subjects set up yet.</p>`;
+  const rm=S.beats_removed||[];
+  $("#beatsRemoved").innerHTML = rm.length
+    ? `<p class="rail" style="margin-top:14px">Removed: ${rm.map(f=>`<button class="link" data-res="${esc(f)}">↩ ${esc(f.replace(/\.md$/,"").replace(/^\d+-/,""))}</button>`).join(" ")}</p>`
+    : "";
+  document.querySelectorAll("[data-res]").forEach(b=>b.onclick=()=>act("/api/beat/restore",{file:b.dataset.res},"Restored"));
+  document.querySelectorAll("[data-del]").forEach(btn=>btn.onclick=()=>{
+    const b=S.beats.find(x=>x.file===btn.dataset.del);
+    $("#dlgTitle").textContent="Remove "+titleCase(b.name)+"?";
+    $("#dlgBody").innerHTML=`<p>It will stop making videos on this subject from tonight.</p>
+      <p class="hint">Kept in <code>beats/removed/</code>, so you can put it back.</p>
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button class="btn" id="doDel">Remove</button>
+        <button class="btn ghost" onclick="document.getElementById('dlg').close()">Keep it</button>
+      </div>`;
+    $("#dlg").showModal();
+    $("#doDel").onclick=async()=>{const r=await act("/api/beat/delete",{file:b.file},"Removed");if(r)$("#dlg").close();};
+  });
   document.querySelectorAll("[data-b]").forEach(btn=>btn.onclick=()=>{
     const b=S.beats.find(x=>x.file===btn.dataset.b);
     $("#dlgTitle").textContent="Edit "+titleCase(b.name);
