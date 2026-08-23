@@ -11,7 +11,7 @@
 # Queued topics always take priority over the nightly auto-pick.
 
 set -uo pipefail
-ROOT="$HOME/ai-videos"
+ROOT="${DAILY_VIDEO_ROOT:-$HOME/ai-videos}"
 TOPICS="$ROOT/TOPICS.md"
 EXCLUDE="$ROOT/EXCLUDE.md"
 LABEL="com.juliusuy.daily-ai-video"
@@ -20,8 +20,7 @@ if [ "${1:-}" = "--drop" ]; then
   shift; want="$*"
   [ -f "$TOPICS" ] || { echo "no queue yet" >&2; exit 1; }
   # substring match, so you do not have to retype the whole thing
-  if grep -qiF -- "$want" "$TOPICS"; then
-    grep -viF -- "- [ ] $want" "$TOPICS" > "$TOPICS.tmp" 2>/dev/null || true
+  if sed -n 's/^- \[ \] *//p' "$TOPICS" | grep -qiF -- "$want"; then
     awk -v w="$want" 'tolower($0) ~ tolower("^- \\[ \\].*" w) {next} {print}' "$TOPICS" > "$TOPICS.tmp"
     mv "$TOPICS.tmp" "$TOPICS"
     echo "dropped from the queue: $want"
