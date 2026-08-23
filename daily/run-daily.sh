@@ -321,6 +321,15 @@ transcript PDF does. So it must NOT sit between research and publication.
 Do it in exactly this order, and do not reorder it to match the skill's narrative:
   a. Research from primary sources.
   b. Write narration/ and project.json. THIS is the script the video uses.
+     SPEAK TO SOMEONE. Measured: these scripts use you/your 2-7 times per 1000 words
+     against 20-30 in ordinary speech, and some carry 1-4 questions in a whole half-hour.
+     It reads as a lecture to an empty room. Aim for 12-20 per 1000 and about two real
+     questions per chapter. Kokoro ignores punctuation, question marks and capitals
+     entirely - verified - so the ONLY emphasis you have is silence, via: paragraph break
+     (0.55s), single line break (0.32s), em-dash (0.22s), and **marked span** (0.34s
+     either side plus 10% slower, two or three per chapter at most). Recent scripts used
+     ZERO em-dashes and averaged 41-word paragraphs, so the voice got a beat only every
+     13 seconds. Break far more often than looks right on the page - it is heard, not read.
      TAPER THE CHAPTERS. Every one of the first thirteen videos got HEAVIER as it went —
      second half 7-46% longer per chapter than the first, none tapering. Attention falls
      over half an hour; the load must fall with it. Put the longest chapters at positions

@@ -150,6 +150,48 @@ Plain text only. Spell out numbers, years ("twenty twenty-six"), currencies ("el
 million dollars"); no markdown, tables, or URLs. Paragraph breaks become breathing
 pauses. Open each chapter "Chapter N. <Title>." Keep the analyst voice.
 
+### Speaking to someone, not at a wall
+
+Measured 23 Aug 2026 across the published set, and this is the channel's biggest
+remaining weakness. Ordinary conversation uses *you/your* around 20-30 times per
+thousand words. These scripts run **2 to 7**, and several carry **one to four questions
+across a full half-hour**. Nobody is being addressed. The prose is correct, well
+evidenced, and talking to an empty room.
+
+**Kokoro will not rescue this.** Measured: the same clause with a comma, an em-dash, a
+full stop or a colon gives the same pause to within 6%; a question mark does not raise
+the final pitch; CAPITALS produce a byte-identical pitch contour. Every expressive
+device a writer reaches for dies in the model. So engagement has to be built into the
+words and the pacing, both of which you control.
+
+**Address the listener.** Not constantly, and never matily — but a half-hour argument
+with no second person in it is a lecture delivered to furniture. Aim for 12-20 per
+thousand. *"Hold that number next to this one."* *"So ask yourself what would have to
+be true."* *"You have seen this before."*
+
+**Ask real questions.** A question the video then answers is the cheapest way to make
+someone lean in, and it costs nothing in rigour. Two per chapter is not too many. A
+question is only dead if you answer it in the same breath.
+
+**Use the pacing devices — they are the only emphasis you have.** `tts.py` turns four
+things into real silence:
+
+| Device | Silence | Use it for |
+|---|---|---|
+| paragraph break | 0.55 s | the argument moves on |
+| single line break | 0.32 s | a beat inside an argument |
+| em-dash | 0.22 s | the aside, the correction, the turn |
+| `**marked span**` | 0.34 s either side, and 10% slower | the number or phrase the chapter turns on |
+
+Two warnings from the audit. Recent scripts contain **zero em-dashes** — a device that
+used to appear 288 times across the set has simply been dropped, and with it every
+aside and turn. And paragraphs average 41 words, so the voice gets a real beat only
+about **every 13 seconds**; that unbroken wall is most of what makes it feel robotic.
+Break more often than feels necessary on the page. It is being *heard*, not read.
+
+Use `**emphasis**` sparingly — two or three per chapter. It is the loudest tool here and
+it stops meaning anything if every paragraph has one.
+
 ### Pacing: every video so far gets heavier as it goes
 
 Measured across thirteen videos: the second half runs **7% to 46% longer per chapter**
