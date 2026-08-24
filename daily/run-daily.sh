@@ -33,7 +33,7 @@ BEATS_DIR="$ROOT/beats"
 CONFIG="$DAILY/config.sh"
 
 # Knobs live in config.sh so this script never needs editing to change cadence or voice.
-VIDEOS_PER_RUN=1; PARALLEL_VIDEOS=1; VOICE=af_heart; SPEED=1.0; WPM=149; MAX_TURNS=800; MAX_ATTEMPTS=3
+VIDEOS_PER_RUN=1; PARALLEL_VIDEOS=1; TTS_ENGINE=kokoro; QWEN_SPEAKER=Ryan; VOICE=af_heart; SPEED=1.0; WPM=149; MAX_TURNS=800; MAX_ATTEMPTS=3
 TTS_JOBS=6; TTS_THREADS=2; MP3_JOBS=6
 # shellcheck source=/dev/null
 [ -f "$CONFIG" ] && . "$CONFIG"
@@ -48,7 +48,8 @@ MIN_FREE_GB=12
 # non-TCC-protected venv or every audio build fails under launchd.
 export TTS_PY="$ROOT/.venv-tts/bin/python"
 # build_audiobook.sh reads these; exported so they reach it through claude's shell.
-export TTS_JOBS TTS_THREADS MP3_JOBS
+export TTS_JOBS TTS_THREADS MP3_JOBS TTS_ENGINE QWEN_SPEAKER
+export QWEN_PY="$ROOT/.venv-qwen/bin/python"
 export PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 mkdir -p "$DAILY/logs"
@@ -241,6 +242,15 @@ EOM
   notify "$reason" "$detail — see NEEDS-ATTENTION.md"
 }
 
+# ------------------------------------------------------------- render mutex
+# Model and network work — research, drafting, fact-checking, roughly 45 minutes a
+# video — overlaps happily and is most of what parallelism buys. Slates and rendering
+# are CPU-bound and do not: three videos hitting ffmpeg together just take turns badly.
+# So those stages take a lock while the rest of each video carries on.
+#
+# mkdir is the mutex because it is atomic everywhere; flock is not, on macOS.
+RENDER_LOCK="$DAILY/.render.lock"
+
 # ----------------------------------------------------------------------- auth
 # WHY THIS EXISTS (22 Aug 2026): the CLI's OAuth session expired overnight. Every
 # attempt died in seconds with "Failed to authenticate: OAuth session expired and
@@ -376,8 +386,14 @@ Do it in exactly this order, and do not reorder it to match the skill's narrativ
   e. A thumbnail — gen_thumbnail.py with a THREE-TO-SIX-WORD phrase, not the title —
      and pass it to the upload with --thumbnail. Without it YouTube picks an
      unreadable frame.
-  f. Audio, slates, render. Audio runs in parallel across chapters via $TTS_JOBS;
-     just call build_audiobook.sh normally and it handles that itself.
+  f. Audio, slates, render. Audio handles its own parallelism — just call
+     build_audiobook.sh normally.
+     THE SLATE AND RENDER STAGES MUST TAKE THE RENDER LOCK. Other videos are building
+     at the same time and these stages are CPU-bound, so run them like this:
+         bash @@ROOT@@/daily/with-render-lock.sh <your normal command>
+     Wrap gen_slates.py, make_kenburns.py, render_videos.py and concat_complete.py.
+     Do NOT wrap research, writing, the fact-check or the upload — those should overlap
+     with the other videos, which is the whole point.
   g. Upload PUBLIC and verify with oEmbed (STEP 4).
   h. Purge (STEP 5) and log (STEP 6).
   i. ONLY NOW, if turns remain, write writeup.md. If you run out of turns here, that is
@@ -388,8 +404,10 @@ Run the /topic-to-youtube skill for the mechanics, at a target of ~@@RUNTIME@@ m
 with the workspace path override above.
 
 NARRATOR AND LENGTH BUDGET — both matter, and the second one is easy to get wrong:
-  - Voice is @@VOICE@@ at speed @@SPEED@@. Pass BOTH to build_audiobook.sh instead of
-    the skill's defaults:  bash $SKILL_DIR/build_audiobook.sh <workspace> @@VOICE@@ @@SPEED@@
+  - The voice engine is set by $TTS_ENGINE, already exported. Just run
+        bash $SKILL_DIR/build_audiobook.sh <workspace> @@VOICE@@ @@SPEED@@
+    and it picks the right one. Do not pass a voice for Qwen; the speaker comes from
+    $QWEN_SPEAKER.
   - This voice narrates at @@WPM@@ words per minute, MEASURED, including the pauses
     tts.py inserts at paragraph breaks. That is NOT the 149 figure in the skill's
     SKILL.md, which was measured for a different voice. Budget from @@WPM@@.
@@ -534,7 +552,11 @@ if [ "$VIDEOS_PER_RUN" -gt 6 ]; then
 fi
 [ "$VIDEOS_PER_RUN" -lt 1 ] && VIDEOS_PER_RUN=1
 
-echo "plan: $VIDEOS_PER_RUN video(s) · voice $VOICE @ ${SPEED}x · ${WPM} wpm · turn cap $MAX_TURNS"
+if [ "$TTS_ENGINE" = "qwen" ]; then
+  echo "plan: $VIDEOS_PER_RUN video(s) · Qwen3-TTS/$QWEN_SPEAKER · ${WPM} wpm · turn cap $MAX_TURNS"
+else
+  echo "plan: $VIDEOS_PER_RUN video(s) · Kokoro/$VOICE @ ${SPEED}x · ${WPM} wpm · turn cap $MAX_TURNS"
+fi
 
 # WHY THE LOOP AND THE TURN CAP (bug found 19 Aug 2026):
 # The 19 Aug run researched, wrote, fact-checked and rendered 7 of 9 audio segments,

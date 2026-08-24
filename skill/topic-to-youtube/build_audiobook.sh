@@ -18,6 +18,12 @@ SPEED="${3:-1.0}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TTS_PY="${TTS_PY:-$HOME/.venv-tts/bin/python}"
 
+# TTS_ENGINE picks the voice model. Kokoro is 82M and parallelises across chapters;
+# Qwen is 1.7B and must render them in one process instead — see qwen_tts_render.py.
+TTS_ENGINE="${TTS_ENGINE:-kokoro}"
+QWEN_PY="${QWEN_PY:-$HOME/ai-videos/.venv-qwen/bin/python}"
+CHATTER_PY="${CHATTER_PY:-$HOME/ai-videos/.venv-chatter/bin/python}"
+
 TITLE=$(python3 -c "import json;print(json.load(open('$PROJ/project.json'))['series_title'])")
 mkdir -p "$PROJ/wav" "$PROJ/mp3"
 
@@ -36,6 +42,54 @@ export OMP_NUM_THREADS="${TTS_THREADS:-2}"
 export MKL_NUM_THREADS="$OMP_NUM_THREADS"
 export VECLIB_MAXIMUM_THREADS="$OMP_NUM_THREADS"
 export TOKENIZERS_PARALLELISM=false
+
+if [ "$TTS_ENGINE" = "chatterbox" ] || [ "$TTS_ENGINE" = "qwen" ]; then
+  # ONE Qwen render at a time, machine-wide.
+  #
+  # With PARALLEL_VIDEOS=3 there are three build_audiobook.sh processes, and each would
+  # load 4.3GB of weights — 13GB against 26GB of RAM. That is the same memory pressure
+  # that made float32 degrade from 4x to 11x realtime, and it would be worse here
+  # because MPS is a single GPU: parallel renders queue anyway, they just also thrash.
+  # Serialising the TTS stage costs nothing in wall clock and removes the risk.
+  # The research and rendering stages of the other videos carry on regardless.
+  GPU_LOCK="${DAILY_VIDEO_ROOT:-$HOME/ai-videos}/daily/.gpu.lock"
+  mkdir -p "$(dirname "$GPU_LOCK")" 2>/dev/null
+  waited=0
+  until mkdir "$GPU_LOCK" 2>/dev/null; do
+    if [ -d "$GPU_LOCK" ]; then
+      age=$(( $(date +%s) - $(stat -f %m "$GPU_LOCK" 2>/dev/null || echo 0) ))
+      [ "$age" -gt 5400 ] && { echo "  taking a stale GPU lock (${age}s old)"; rmdir "$GPU_LOCK" 2>/dev/null; }
+    fi
+    [ "$waited" -eq 0 ] && echo "  waiting for the GPU (another video is rendering audio)..."
+    waited=$((waited + 10)); sleep 10
+  done
+  trap 'rmdir "$GPU_LOCK" 2>/dev/null' EXIT
+  [ "$waited" -gt 0 ] && echo "  got the GPU after ${waited}s"
+
+  if [ "$TTS_ENGINE" = "chatterbox" ]; then
+    echo "--- TTS: Chatterbox, one process, chapters in sequence ---"
+    if [ ! -x "$CHATTER_PY" ]; then
+      echo "ERROR: Chatterbox interpreter missing at $CHATTER_PY" >&2; exit 1
+    fi
+    "$CHATTER_PY" "$HERE/chatterbox_render.py" "$PROJ" "${CHATTER_VOICE:--}" || {
+      echo "ERROR: Chatterbox render failed" >&2; exit 1; }
+  else
+    echo "--- TTS: Qwen3-TTS, one process, chapters in sequence ---"
+    if [ ! -x "$QWEN_PY" ]; then
+      echo "ERROR: Qwen interpreter missing at $QWEN_PY" >&2; exit 1
+    fi
+    "$QWEN_PY" "$HERE/qwen_tts_render.py" "$PROJ" "${QWEN_SPEAKER:-Ryan}" || {
+      echo "ERROR: Qwen render failed" >&2; exit 1; }
+  fi
+  for f in "$PROJ"/narration/*.txt; do
+    base=$(basename "$f" .txt)
+    if [ ! -s "$PROJ/wav/$base.wav" ]; then
+      echo "ERROR: $base.wav missing after $TTS_ENGINE render" >&2; exit 1
+    fi
+  done
+  echo "--- TTS complete ---"
+  rmdir "$GPU_LOCK" 2>/dev/null; trap - EXIT
+else
 
 TODO=()
 for f in "$PROJ"/narration/*.txt; do
@@ -76,6 +130,7 @@ if [ "${#TODO[@]}" -gt 0 ]; then
     fi
   done
   echo "--- TTS complete: ${#TODO[@]} chapter(s) ---"
+fi
 fi
 
 echo "--- encoding chapter MP3s ---"

@@ -24,3 +24,7 @@ __pycache__/
 */videos/
 */backgrounds/
 music.wav
+
+# Credentials — never commit
+*.key
+elevenlabs.key
