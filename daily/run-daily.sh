@@ -1,17 +1,17 @@
 #!/bin/bash
 # Daily AI-topic video runner.
 #
-# Fired by launchd (com.dailyaivideo.daily-ai-video) at ~02:07 local.
+# Fired by launchd (com.juliusuy.daily-ai-video) at ~02:07 local.
 #
-# WHY THIS LIVES OUTSIDE ~/Documents:
+# WHY THIS LIVES IN ~/ai-videos AND NOT ~/Documents:
 #   macOS TCC protects ~/Documents, ~/Desktop and ~/Downloads. A launchd-spawned
 #   process gets NO access to them — directory listing and execution both fail with
 #   "Operation not permitted", even though unix perms look fine. The first scheduled
 #   run (18 Aug 2026, 02:07) died with exit 126 for exactly this reason.
 #   Everything the automated path touches must therefore live outside those dirs:
-#     - this script          -> $ROOT/daily/
-#     - the Kokoro TTS venv  -> $ROOT/.venv-tts  (one under ~/Documents is unreachable)
-#     - all run workspaces   -> $ROOT/<slug>/
+#     - this script          -> ~/ai-videos/daily/
+#     - the Kokoro TTS venv  -> ~/ai-videos/.venv-tts  (the ~/Documents one is unreachable)
+#     - all run workspaces   -> ~/ai-videos/<slug>/
 #   Readable from launchd and left in place: ~/.claude/skills, ~/.config/topic-to-youtube,
 #   ~/.venv-ytapi  (dotfile dirs in $HOME are not TCC-protected).
 #
@@ -33,15 +33,14 @@ BEATS_DIR="$ROOT/beats"
 CONFIG="$DAILY/config.sh"
 
 # Knobs live in config.sh so this script never needs editing to change cadence or voice.
-VIDEOS_PER_RUN=1; VOICE=af_heart; SPEED=1.0; WPM=149; MAX_TURNS=800; MAX_ATTEMPTS=3
+VIDEOS_PER_RUN=1; PARALLEL_VIDEOS=1; VOICE=af_heart; SPEED=1.0; WPM=149; MAX_TURNS=800; MAX_ATTEMPTS=3
 TTS_JOBS=6; TTS_THREADS=2; MP3_JOBS=6
 # shellcheck source=/dev/null
 [ -f "$CONFIG" ] && . "$CONFIG"
 RUN_STARTED="$(date '+%Y-%m-%dT%H:%M:%S')"
 
-# Must be set BEFORE auth_ok() runs, not just before the retry loop — the script runs
-# under `set -u`, so referencing it unset would abort and report a false "sign-in
-# expired" on every run. Overridable so the loop can be tested with a stub binary.
+# Must be set BEFORE auth_ok() runs — under `set -u` an unset reference would abort
+# the run and report a false "sign-in expired".
 CLAUDE_BIN="${CLAUDE_BIN:-/opt/homebrew/bin/claude}"
 MIN_FREE_GB=12
 
@@ -111,11 +110,20 @@ beat_body() {     # $1 = beat file — everything after the first `---`
 
 # ------------------------------------------------------------------ topic queue
 # TOPICS.md is a human-editable checklist. `- [ ] foo` is pending, `- [x] ...` is done.
-# The queue always wins over auto-picking, so a topic you actually asked for is never
+# The queue always wins over auto-picking, so a topic Julius actually wants is never
 # displaced by whatever happened to be in the news that night.
 next_topic() {
+  nth_topic 1
+}
+
+# The Nth pending topic. Slots must be able to claim DIFFERENT queue entries: with
+# PARALLEL_VIDEOS>1 every slot calls this at the same moment, before any of them has
+# marked anything done, so "always give me the first one" hands all of them the same
+# topic. That is not theoretical — a three-slot test assigned "topic alpha" three
+# times and never touched "topic bravo".
+nth_topic() {
   [ -f "$TOPICS" ] || return 1
-  sed -n 's/^- \[ \] *//p' "$TOPICS" | grep -v '^[[:space:]]*$' | head -1
+  sed -n 's/^- \[ \] *//p' "$TOPICS" | grep -v '^[[:space:]]*$' | sed -n "${1}p"
 }
 
 # Subjects the operator never wants covered. Free text, read by the model rather than
@@ -146,7 +154,7 @@ open(f, "w").write("\n".join(lines) + "\n")
 
 # ----------------------------------------------------------------------- status
 # Publishes machine-readable state for the menu bar indicator
-# ($ROOT/daily/menubar.py). The indicator degrades gracefully if this file is
+# (~/ai-videos/daily/menubar.py). The indicator degrades gracefully if this file is
 # missing or stale, so a failure to write it must never abort a run — hence `|| true`.
 # Uses /usr/bin/python3 for json only; safe because cwd is $ROOT, never ~/Documents
 # (a cwd under TCC makes every Python import fail — see RESUME.md).
@@ -196,7 +204,7 @@ notify() {
   sub="${sub//\"/}" ; msg="${msg//\"/}"
   if command -v terminal-notifier >/dev/null 2>&1; then
     terminal-notifier -title "Daily AI Video" -subtitle "$sub" -message "$msg" \
-      -open "file://$LOG" -group com.dailyaivideo.daily-ai-video >/dev/null 2>&1 && return 0
+      -open "file://$LOG" -group com.juliusuy.daily-ai-video >/dev/null 2>&1 && return 0
   fi
   osascript -e "display notification \"$msg\" with title \"Daily AI Video\" subtitle \"$sub\"" \
     >/dev/null 2>&1
@@ -205,7 +213,7 @@ notify() {
 # Record a failure durably AND interactively. The marker file is the load-bearing part:
 # a notification fired at 02:07 lands during Sleep Focus and can be swiped away unseen.
 # The marker survives until the next successful run deletes it, and the 09:00 check
-# agent (com.dailyaivideo.daily-ai-video-check) re-notifies while it exists.
+# agent (com.juliusuy.daily-ai-video-check) re-notifies while it exists.
 fail() {
   local reason="$1" detail="$2"
   echo "FAILURE: $reason — $detail"
@@ -220,11 +228,11 @@ $detail
 
 - Log: \`$LOG\`
 - Ledger: \`$LEDGER\`
-- Full context: \`$ROOT\`
+- Full context: \`~/ai-videos/RESUME.md\`
 
 Retry now:
 \`\`\`
-launchctl kickstart -k "gui/\$(id -u)/com.dailyaivideo.daily-ai-video"
+launchctl kickstart -k "gui/\$(id -u)/com.juliusuy.daily-ai-video"
 \`\`\`
 
 Deleted automatically by the next successful run.
@@ -281,7 +289,7 @@ if [ -x "$TTS_PY" ]; then
 else
   echo "MISSING — aborting"
   echo "$(date '+%Y-%m-%d') | ABORTED — TTS venv missing at $TTS_PY" >> "$LEDGER"
-  fail "TTS venv missing" "No Kokoro interpreter at $TTS_PY — no audio can be built. Rebuild with: python3.12 -m venv $ROOT/.venv-tts && $ROOT/.venv-tts/bin/pip install kokoro soundfile numpy"
+  fail "TTS venv missing" "No Kokoro interpreter at $TTS_PY — no audio can be built. Rebuild with: python3.12 -m venv ~/ai-videos/.venv-tts && ~/ai-videos/.venv-tts/bin/pip install kokoro soundfile numpy"
   exit 1
 fi
 
@@ -308,10 +316,10 @@ public. Work accordingly.
 IMPORTANT ENVIRONMENT NOTE: you are running under launchd, which has NO access to
 ~/Documents, ~/Desktop or ~/Downloads (macOS TCC — listing and executing there fail with
 "Operation not permitted"). Therefore:
-  - Create the workspace at @@ROOT@@/<slug>/ , NOT under ~/Documents, ~/Desktop or ~/Downloads.
+  - Create the workspace at ~/ai-videos/<slug>/ , NOT ~/Documents/audiobooks/<slug>/.
     This overrides the path in the topic-to-youtube skill's section 0.
-  - The Kokoro TTS interpreter is at @@ROOT@@/.venv-tts/bin/python and is already
-    exported as $TTS_PY. Do not use a venv under a TCC-protected directory; it is unreachable.
+  - The Kokoro TTS interpreter is at ~/ai-videos/.venv-tts/bin/python and is already
+    exported as $TTS_PY. Do not use the ~/Documents/heymax one; it is unreachable.
   - Everything else (the skill, the YouTube token, ~/.venv-ytapi) is reachable normally.
 
 STEP 1 - THE TOPIC.
@@ -434,12 +442,16 @@ Also: YouTube caps descriptions at 5000 characters and chapter timestamps are ad
 Budget for them. If over cap, trim opening prose — never the reported-vs-confirmed
 disclosures or the primary-source list.
 
-STEP 6 - LOG. COPY the tally out of verification.md rather than recalling it, and make
+STEP 6 - LOG. Append the ledger line by running:
+    bash @@ROOT@@/daily/log-video.sh "<the line>"
+Do NOT append to DAILY-LOG.md yourself. Other videos may be finishing at the same
+moment, and that helper holds a lock so two writers cannot interleave.
+Also COPY the tally out of verification.md rather than recalling it, and make
 the ledger line, the description and verification.md agree exactly. One video published
 94 in the ledger against 89 in both its own record and its description — harmless there,
 since the audience saw the correct figure, but these numbers are the channel's evidence
 that the gate is real, so they have to be exact.
-Append one line to @@ROOT@@/DAILY-LOG.md in exactly this format:
+The line must be in exactly this format:
 YYYY-MM-DD | <topic> | <youtu.be URL> | <runtime> | claims checked: N, corrected: N, cut: N
 
 Report at the end: topic, URL, what the adversarial pass caught, anything degraded or skipped.
@@ -455,12 +467,12 @@ it and stopped before publishing — most likely it hit the turn limit. Your job
 finish that existing work, NOT to pick a new topic or rebuild from scratch.
 
 ENVIRONMENT: you are under launchd with NO access to ~/Documents, ~/Desktop, ~/Downloads
-(macOS TCC). The workspace is at @@ROOT@@/<slug>/ and the Kokoro interpreter is at
+(macOS TCC). The workspace is at ~/ai-videos/<slug>/ and the Kokoro interpreter is at
 $TTS_PY. Do not use any ~/Documents path.
 
 STEP 1 - FIND THE WORKSPACE.
-Look in @@ROOT@@/ for the directory containing writeup.md whose slug does NOT appear
-in @@ROOT@@/DAILY-LOG.md next to a youtu.be URL. That is tonight's unfinished run.
+Look in ~/ai-videos/ for the directory containing writeup.md whose slug does NOT appear
+in ~/ai-videos/DAILY-LOG.md next to a youtu.be URL. That is tonight's unfinished run.
 Read its project.json, verification.md and description.txt to load the context.
 
 STEP 2 - WORK OUT WHAT IS ALREADY DONE, from the filesystem, not from assumptions:
@@ -482,7 +494,7 @@ already records the adversarial pass; do not repeat it wholesale, but DO run the
 consistency sweep before uploading: grep description.txt, project.json hooks and the
 title for any figure the fact-check corrected.
 
-STEP 4 - PURGE, then LOG one line to @@ROOT@@/DAILY-LOG.md in the required format:
+STEP 4 - PURGE, then LOG one line via  bash @@ROOT@@/daily/log-video.sh "<line>"  in the required format:
 YYYY-MM-DD | <topic> | <youtu.be URL> | <runtime> | claims checked: N, corrected: N, cut: N
 Purge only after oEmbed confirms the video is public.
 
@@ -493,8 +505,6 @@ BRIEF
 cd "$ROOT" || exit 1
 TODAY="$(date +%Y-%m-%d)"
 
-# Abort before building anything if the CLI cannot authenticate. Nothing downstream
-# can succeed, and a clear message here saves a whole night.
 echo -n "claude auth: "
 if auth_ok; then
   echo "OK"
@@ -542,17 +552,37 @@ MADE=0
 FAILED_VIDEOS=0
 AUTH_DIED=0
 
-for video in $(seq 1 "$VIDEOS_PER_RUN"); do
+# ---------------------------------------------------------------- one video
+# The whole per-video sequence — topic selection, the attempt loop, the ledger and
+# queue bookkeeping — as a function, so it can be run in the foreground one at a time
+# or in the background several at once.
+#
+# WHY PARALLEL IS WORTH IT (measured 24 Aug 2026): a three-video sequential run took
+# over six hours and had published one video by 08:19. Per video, roughly 45 minutes
+# goes on research, writing and fact-checking, which is model and network bound and
+# contends with nothing, and roughly 75 minutes on slates and rendering, which is CPU
+# bound. Running the videos concurrently overlaps all the model time; the CPU time
+# costs about the same in total either way, it is just spread across the same cores.
+#
+# Two things make it safe:
+#   - Every topic is chosen BEFORE anything launches. Parallel agents cannot see one
+#     another's choices, so leaving them to pick would let two cover the same story.
+#   - The ledger is written through daily/log-video.sh, which holds an mkdir mutex.
+run_one_video() {
+  local video="$1"
+  echo "=== video $video starting $(date '+%H:%M:%S') ==="
   BASE=$(published_count)
   TOPIC_DIRECTIVE=""
   BEAT_FILE=""
 
-  # Queue first, news second. A topic the operator actually asked for should never be
+  # Queue first, news second. A topic Julius actually asked for should never be
   # displaced by whatever happened to be in the news that night.
   # Runtime defaults to 30 and is overridden per beat below.
   RUNTIME_MIN=30
 
-  QUEUED="$(next_topic || true)"
+  # Assigned by assign_topics() before anything launched — never chosen here, or
+  # parallel slots would race for the same queue entry.
+  QUEUED="$(cat "$DAILY/slot-$video.topic" 2>/dev/null || true)"
   if [ -z "$QUEUED" ]; then
     # No one-off topic waiting — use this slot's standing beat, cycling if there are
     # fewer beats than videos.
@@ -561,7 +591,8 @@ for video in $(seq 1 "$VIDEOS_PER_RUN"); do
     BEATS=()
     for bf in $(beat_files); do BEATS[${#BEATS[@]}]="$bf"; done
     if [ "${#BEATS[@]}" -gt 0 ]; then
-      BEAT_FILE="${BEATS[$(( (video - 1) % ${#BEATS[@]} ))]}"
+      BEAT_IDX="$(cat "$DAILY/slot-$video.beatidx" 2>/dev/null || echo $(( video - 1 )))"
+      BEAT_FILE="${BEATS[$(( BEAT_IDX % ${#BEATS[@]} ))]}"
       RUNTIME_MIN="$(beat_runtime "$BEAT_FILE")"
       echo "video $video/$VIDEOS_PER_RUN — beat: $(basename "$BEAT_FILE" .md) (${RUNTIME_MIN} min)"
       TOPIC_DIRECTIVE="$(beat_body "$BEAT_FILE")
@@ -656,7 +687,7 @@ $EXCL"
       echo "NOTE: video $video attempt $attempt hit the $MAX_TURNS-turn cap (exits 0 — not a crash)"
     fi
 
-    # Retrying an expired credential just fails faster. Bail out of the whole run.
+    # Retrying an expired credential just fails faster. Abandon the whole run.
     if auth_error_in "$ATTEMPT_OUT"; then
       echo "AUTH FAILURE mid-run — abandoning remaining attempts and videos"
       record_auth 0
@@ -673,7 +704,7 @@ $EXCL"
 
   if [ "$AUTH_DIED" -eq 1 ]; then
     FAILED_VIDEOS=$((FAILED_VIDEOS + 1))
-    break
+    return 1
   fi
 
   if [ "$(published_count)" -gt "$BASE" ]; then
@@ -689,7 +720,80 @@ $EXCL"
     echo "video $video/$VIDEOS_PER_RUN FAILED after $MAX_ATTEMPTS attempts"
     # A queued topic stays unchecked so tomorrow's run picks it up again.
   fi
-done
+
+  echo "=== video $video finished $(date '+%H:%M:%S') ==="
+}
+
+# ----------------------------------------------------------- topic assignment
+# Decide every slot's subject BEFORE any of them starts. Sequential runs could get
+# away with choosing inside the slot, because each finished and marked its topic done
+# before the next began. Parallel slots all start at once and would every one of them
+# take the first pending queue entry.
+assign_topics() {
+  local slot=1 qn=1 beat_i=0
+  rm -f "$DAILY"/slot-*.topic "$DAILY"/slot-*.beatidx 2>/dev/null
+  while [ "$slot" -le "$VIDEOS_PER_RUN" ]; do
+    local t
+    t="$(nth_topic "$qn" 2>/dev/null || true)"
+    if [ -n "$t" ]; then
+      printf '%s' "$t" > "$DAILY/slot-$slot.topic"
+      echo "  slot $slot <- queued: $t"
+      qn=$((qn + 1))
+    else
+      echo "$beat_i" > "$DAILY/slot-$slot.beatidx"
+      echo "  slot $slot <- beat index $beat_i"
+      beat_i=$((beat_i + 1))
+    fi
+    slot=$((slot + 1))
+  done
+}
+
+echo "assigning topics..."
+assign_topics
+
+# ------------------------------------------------------------- dispatch
+STATUS=1
+MADE=0
+FAILED_VIDEOS=0
+AUTH_DIED=0
+
+# Never run more at once than videos requested, and never more than 3: beyond that the
+# render stages thrash rather than scale, and each video wants ~1.7GB of working space.
+[ "$PARALLEL_VIDEOS" -lt 1 ] && PARALLEL_VIDEOS=1
+[ "$PARALLEL_VIDEOS" -gt "$VIDEOS_PER_RUN" ] && PARALLEL_VIDEOS="$VIDEOS_PER_RUN"
+[ "$PARALLEL_VIDEOS" -gt 3 ] && PARALLEL_VIDEOS=3
+
+if [ "$PARALLEL_VIDEOS" -gt 1 ]; then
+  # Split the render budget between the concurrent videos, or three of them will each
+  # try to use every core. TTS_JOBS x TTS_THREADS should stay near the core count.
+  TTS_JOBS=$(( TTS_JOBS / PARALLEL_VIDEOS )); [ "$TTS_JOBS" -lt 1 ] && TTS_JOBS=1
+  MP3_JOBS=$(( MP3_JOBS / PARALLEL_VIDEOS )); [ "$MP3_JOBS" -lt 1 ] && MP3_JOBS=1
+  export TTS_JOBS MP3_JOBS
+  echo "running $PARALLEL_VIDEOS video(s) concurrently · TTS_JOBS=$TTS_JOBS each"
+
+  PIDS=""
+  for video in $(seq 1 "$VIDEOS_PER_RUN"); do
+    run_one_video "$video" >>"$DAILY/logs/video-$TODAY-$video.log" 2>&1 &
+    PIDS="$PIDS $!"
+    # keep at most PARALLEL_VIDEOS in flight
+    while [ "$(jobs -rp | wc -l)" -ge "$PARALLEL_VIDEOS" ]; do sleep 5; done
+  done
+  for pid in $PIDS; do wait "$pid" 2>/dev/null; done
+  echo "all video slots finished $(date '+%H:%M:%S')"
+  # per-video logs are separate files; fold them into the run log for one record
+  for video in $(seq 1 "$VIDEOS_PER_RUN"); do
+    LOGP="$DAILY/logs/video-$TODAY-$video.log"
+    [ -f "$LOGP" ] && { echo; echo "----- video $video log -----"; cat "$LOGP"; }
+  done
+  # recount from the ledger, which is the only reliable record with parallel writers
+  MADE=$(published_count)
+  FAILED_VIDEOS=$(( VIDEOS_PER_RUN - MADE ))
+  [ "$FAILED_VIDEOS" -lt 0 ] && FAILED_VIDEOS=0
+else
+  for video in $(seq 1 "$VIDEOS_PER_RUN"); do
+    run_one_video "$video"
+  done
+fi
 
 echo "run summary: $MADE/$VIDEOS_PER_RUN published, $FAILED_VIDEOS failed"
 
@@ -713,7 +817,7 @@ for ws in "$ROOT"/*/; do
   fi
 done
 
-# If nothing was published today, say so loudly in the log, the ledger, AND on screen.
+# If nothing was published today, say so loudly in the log, the ledger, AND to Julius.
 # The ledger line alone was the old silent-failure mode: written, and never read.
 if [ "$MADE" -eq 0 ]; then
   echo "WARNING: no published URL logged for $TODAY — run did not complete to upload"
